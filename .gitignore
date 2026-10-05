@@ -1,0 +1,16 @@
+# Intermediate build outputs (build_site.py copies what the site needs)
+src/builder/modern-split-builder.html
+src/classic/classic-oled-panel.html
+src/classic/out/
+
+__pycache__/
+*.pyc
+
+# Personal Claude Code settings and notes
+.claude/settings.local.json
+CLAUDE.local.md
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,892 @@
+<title>Modern Split Builder</title>
+<style>
+/*__FONTS__*/
+/* Layout: deliberately black single-theme tool (OLED subject). Settings column on the left, sticky live preview + export on the right; stacks on phones. */
+:root {
+  --bg: #000000;
+  --surface: #0B0C0E;
+  --field: #111316;
+  --line: #22262B;
+  --fg: #E9EDF2;
+  --muted: #8A939D;
+  --accent: #3DD9C5;
+  --accent-ink: #00110F;
+  --warn: #F2B740;
+  --ui: "Segoe UI", "Selawik Local", system-ui, sans-serif;
+  --s-1: .8125rem; --s0: .9375rem; --s1: 1.125rem; --s2: 1.5rem; --s3: 2.4rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: var(--s0); line-height: 1.5; }
+.wrap { max-width: 1600px; margin: 0 auto; padding-inline: 28px; padding-block: 32px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.wrap > * { min-width: 0; }
+@media (max-width: 560px) { .wrap { padding-inline: 16px; padding-block: 20px 48px; } }
+h1, h2 { margin: 0; line-height: 1.1; font-weight: 300; text-wrap: balance; }
+h1 { font-size: var(--s3); letter-spacing: -.01em; }
+h2 { font-size: var(--s2); }
+p { margin: 0; }
+.eyebrow { font-size: var(--s-1); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 10px; }
+header .lead { color: var(--muted); font-size: var(--s1); max-width: 70ch; }
+
+.app { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; align-items: start; }
+.app > * { min-width: 0; }
+@media (max-width: 1000px) { .app { grid-template-columns: minmax(0, 1fr); } .preview { order: -1; } }
+
+/* settings */
+.settings { display: grid; gap: 22px; }
+fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 10px; min-width: 0; }
+legend { padding: 0 0 8px; width: 100%; border-bottom: 1px solid var(--line); margin-bottom: 4px; font-size: var(--s-1); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.hint { font-size: var(--s-1); color: var(--muted); }
+.f { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 10px; align-items: center; }
+.f > label, .f > span.lab { font-size: var(--s-1); color: var(--fg); }
+input[type=text], input[type=number], select {
+  width: 100%; min-width: 0; font: inherit; font-size: var(--s0); color: var(--fg); background: var(--field);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; height: 36px;
+}
+input[type=number] { font-variant-numeric: tabular-nums; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input[type=color] { width: 44px; height: 36px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); cursor: pointer; }
+.colors { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grid-rows { display: grid; gap: 8px; }
+.rowhead, .fanrow, .diskrow { display: grid; gap: 8px; align-items: center; }
+.fanrow, .rowhead.fans { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.25fr) minmax(0, .85fr); }
+.diskrow, .rowhead.disks { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .8fr); }
+.rowhead span { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.pair { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.wh { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; color: var(--muted); }
+.slider { display: grid; grid-template-columns: minmax(0, 1fr) 4.2rem; gap: 12px; align-items: center; }
+.slider input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+.slider output { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
+.ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding-right: 5.2rem; margin-top: -4px; }
+.readout { font-size: var(--s-1); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-variant-numeric: tabular-nums; }
+.checks { display: grid; gap: 2px; }
+.check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: baseline; padding: 6px 0; cursor: pointer; font-size: var(--s-1); }
+.check input { accent-color: var(--accent); margin: 0; width: 15px; height: 15px; transform: translateY(2px); }
+.check span { grid-column: 2; color: var(--muted); font-size: 12px; }
+.check:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.dimmrow { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; padding: 0 0 6px 25px; }
+.dimmrow .lab { font-size: 12px; color: var(--muted); }
+.pair label { display: grid; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+/* preview */
+.preview { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 14px; }
+@media (max-width: 1000px) { .preview { position: static; } }
+.stage { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #000; position: relative; }
+.stage canvas { display: block; width: 100%; height: auto; max-width: 100%; }
+.busy { position: absolute; inset: auto 12px 12px auto; font-size: 12px; color: var(--muted); background: rgba(0,0,0,.7); padding: 4px 10px; border-radius: 999px; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: var(--s-1); font-weight: 600; color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #16191C; color: var(--fg); box-shadow: inset 0 0 0 1px #2C3136; }
+.stat { font-size: var(--s-1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--fg); font-weight: 400; }
+.export { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.export-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn { font: inherit; font-weight: 700; font-size: var(--s0); letter-spacing: .02em; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: 1px solid transparent; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:disabled { opacity: .5; cursor: progress; }
+.btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+#exp-status { font-size: var(--s-1); color: var(--muted); }
+#exp-status.ok { color: var(--accent); }
+#exp-status.err { color: var(--warn); }
+.notes { display: grid; gap: 10px; max-width: 900px; }
+.notes ol { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.notes li { padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.notes li b { display: block; color: var(--fg); font-weight: 600; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .86em; background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">AIDA64 SensorPanel · 3840 × 2160</p>
+    <h1>Modern Split Builder</h1>
+    <p class="lead">Change the settings and the preview redraws. When it looks right, export the file and import it in SensorPanel Manager.</p>
+  </header>
+
+  <div class="app">
+    <form class="settings" id="settings" autocomplete="off">
+      <fieldset>
+        <legend>Display</legend>
+        <div class="f"><label for="s-res">Resolution</label>
+          <select id="s-res">
+            <option value="3840x2160">3840 × 2160 · 4K</option>
+            <option value="2560x1440">2560 × 1440</option>
+            <option value="1920x1080">1920 × 1080</option>
+            <option value="3840x2400">3840 × 2400 · 16:10</option>
+            <option value="2560x1600">2560 × 1600 · 16:10</option>
+            <option value="1920x1200">1920 × 1200 · 16:10</option>
+            <option value="2752x2064">2752 × 2064 · iPad Pro 13″</option>
+            <option value="2960x1848">2960 × 1848 · Galaxy Tab Ultra</option>
+            <option value="custom">Custom…</option>
+          </select></div>
+        <div class="f" id="custom-res" hidden><span class="lab">Custom size</span>
+          <div class="wh"><input type="number" id="s-w" min="960" max="7680" step="2" aria-label="Width in pixels"><span>×</span><input type="number" id="s-h" min="540" max="4320" step="2" aria-label="Height in pixels"></div></div>
+        <div class="f"><label for="s-dpi">Windows scale</label>
+          <div class="slider"><input type="range" id="s-dpi" min="100" max="300" step="25"><output id="o-dpi" for="s-dpi">100 %</output></div></div>
+        <div class="ticks" aria-hidden="true"><span>100</span><span>150</span><span>200</span><span>250</span><span>300</span></div>
+        <p class="readout" id="res-readout" role="status"></p>
+        <p class="hint">Set the resolution to your screen's native pixels and the scale to the value in Windows Settings › Display. AIDA64 enlarges the panel's positions and text by that scale, so the export shrinks them first.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Header</legend>
+        <div class="f"><label for="s-hmode">Centre shows</label>
+          <select id="s-hmode"><option value="media">Now playing</option><option value="title">A title</option><option value="reg">Your own text (registry)</option><option value="none">Nothing</option></select></div>
+        <div class="f" id="title-row"><label for="s-title">Title</label><input type="text" id="s-title" maxlength="24" placeholder="e.g. your PC's name"></div>
+        <p class="hint" id="hmode-hint"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Extra readings</legend>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="x-thr">CPU throttling<span>Under the CPU ring</span></label>
+          <label class="check"><input type="checkbox" id="x-limit">GPU limit reason<span>Under the GPU ring. NVIDIA cards report it.</span></label>
+          <label class="check"><input type="checkbox" id="x-vramtemp">VRAM temperature<span>Fourth readout under the GPU ring</span></label>
+          <label class="check"><input type="checkbox" id="x-vramclk">VRAM clock<span>VRAM tile</span></label>
+          <label class="check"><input type="checkbox" id="x-memhist">RAM and VRAM history<span>Memory and VRAM tiles. Replaces the usage bars with about 9 minutes of history.</span></label>
+          <label class="check"><input type="checkbox" id="x-dimm">Memory stick temperatures<span>Memory tile. Needs DIMM thermal sensor support turned on in AIDA64.</span></label>
+          <div class="dimmrow" id="dimm-row"><span class="lab">Slots</span><select id="x-dimm-a" aria-label="First memory reading"></select><select id="x-dimm-b" aria-label="Second memory reading"></select></div>
+          <label class="check"><input type="checkbox" id="x-hpwr">12VHPWR connector power and voltage<span>Power draw. Cards with the 16-pin plug.</span></label>
+          <label class="check"><input type="checkbox" id="x-coolant">Coolant temperature<span>Cooling row. Only if your AIO reports it.</span></label>
+          <label class="check"><input type="checkbox" id="x-board">Motherboard, VRM and chipset temperatures<span>Cooling header</span></label>
+          <label class="check"><input type="checkbox" id="x-refresh">Refresh rate<span>Frame-rate tile</span></label>
+          <label class="check"><input type="checkbox" id="x-netx">Network totals and link speed<span>Network tile</span></label>
+        </div>
+        <p class="hint">Turn off any your hardware doesn't report. They'd show blank or 0 on the panel.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Temperatures</legend>
+        <div class="f"><label for="s-cputemp">CPU sensor</label>
+          <select id="s-cputemp"><option value="TCPUPKG">CPU Package</option><option value="TCPUDIO">CPU Diode</option><option value="TCPU">CPU</option></select></div>
+        <div class="f"><label for="s-gputemp">GPU sensor</label>
+          <select id="s-gputemp"><option value="TGPU1DIO">GPU Diode (core)</option><option value="TGPU1HOT">GPU Hotspot</option><option value="TGPU1MEM">GPU Memory</option></select></div>
+        <div class="f"><label for="s-warm">Amber from</label><input type="number" id="s-warm" min="40" max="110" step="1"></div>
+        <div class="f"><label for="s-hot">Red from</label><input type="number" id="s-hot" min="40" max="115" step="1"></div>
+        <p class="hint">Sets when the temperature rings and core bars change colour, in °C.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Network</legend>
+        <div class="f"><label for="s-nic">Adapter</label>
+          <select id="s-nic"></select></div>
+        <div class="f"><label for="s-netlabel">Label</label><input type="text" id="s-netlabel" maxlength="16"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Storage</legend>
+        <div class="grid-rows">
+          <div class="rowhead disks"><span>Name</span><span>AIDA64 disk</span><span>Letter</span></div>
+          <div class="diskrow" data-i="0"></div>
+          <div class="diskrow" data-i="1"></div>
+        </div>
+        <p class="hint">Temperature and speed come from the disk number. Space used comes from the drive letter.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cooling</legend>
+        <div class="grid-rows">
+          <div class="rowhead fans"><span>Label</span><span>Sensor</span><span>Max RPM</span></div>
+          <div class="fanrow" data-i="0"></div><div class="fanrow" data-i="1"></div><div class="fanrow" data-i="2"></div>
+          <div class="fanrow" data-i="3"></div><div class="fanrow" data-i="4"></div><div class="fanrow" data-i="5"></div>
+        </div>
+        <p class="hint">Set a sensor to Off to drop that fan. The rest widen to fill the row.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Power scales</legend>
+        <div class="pair">
+          <label for="s-cpuw">CPU max W<input type="number" id="s-cpuw" min="50" max="600" step="10"></label>
+          <label for="s-gpuw">GPU max W<input type="number" id="s-gpuw" min="50" max="1000" step="10"></label>
+          <label for="s-tdp">GPU TDP max %<input type="number" id="s-tdp" min="100" max="200" step="5"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Colours</legend>
+        <div class="f"><span class="lab">CPU · GPU accents</span>
+          <div class="colors"><input type="color" id="s-cpucol" aria-label="CPU accent colour"><input type="color" id="s-gpucol" aria-label="GPU accent colour"></div></div>
+      </fieldset>
+
+      <div><button type="button" class="btn ghost" id="reset">Reset to defaults</button></div>
+    </form>
+
+    <section class="preview" aria-label="Preview and export">
+      <div class="stage"><canvas id="cv" aria-label="Panel preview at 3840 by 2160"></canvas><span class="busy" id="busy" hidden>Redrawing…</span></div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Simulated workload">
+          <button type="button" data-sc="idle" aria-pressed="false">Idle</button>
+          <button type="button" data-sc="gaming" aria-pressed="true">Gaming</button>
+          <button type="button" data-sc="render" aria-pressed="false">Rendering</button>
+        </div>
+        <span class="stat">Lit pixels <b id="st-lit">–</b></span>
+      </div>
+      <div class="export">
+        <div class="export-row">
+          <button type="button" class="btn primary" id="export">Export .sensorpanel</button>
+          <span id="exp-status" role="status" aria-live="polite"></span>
+        </div>
+        <p class="hint" id="exp-hint">Saves Modern_Split_3840x2160.sensorpanel with every image embedded.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="notes">
+    <h2>Importing</h2>
+    <ol>
+      <li><b>Import it in SensorPanel Manager.</b>Right-click the panel, open SensorPanel Manager, click Import and pick the file. The import replaces the current layout.</li>
+      <li><b>Extra readings depend on your hardware.</b>Coolant, 12VHPWR, memory stick and GPU limit readings only appear if your parts report them. Memory temperatures also need File › Preferences › Stability › DIMM thermal sensor support turned on, followed by a restart of AIDA64. Untick any that show blank or 0, then export again.</li>
+      <li><b>Fixed parts.</b>The core grid is laid out for a 6 P + 8 E Intel CPU, the FPS readout needs RivaTuner Statistics Server, and readings use Segoe UI.</li>
+      <li><b>If it still lands at the wrong size.</b>Older AIDA64 builds handle Windows scaling inconsistently. You can switch scaling off for AIDA64 instead: right-click aida64.exe › Properties › Compatibility › Change high DPI settings, tick "Override high DPI scaling behavior", choose System and restart Windows. Then export with the scale at 100 % and the resolution at your scaled size, for example 1920 × 1080 for a 4K screen at 200 %. Text will be a little soft. AIDA64's newer betas also fixed several mixed-scaling bugs.</li>
+      <li><b>Your settings stay in this browser.</b>Come back later, change one thing and export again.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+/* ================================================================ constants */
+const W = 3840, H = 2160;
+const C = { HI: [233, 237, 242], TITLE: [178, 186, 196], MID: [128, 137, 147], LO: [84, 92, 101], HAIR: [28, 31, 36], GRID: [19, 21, 24],
+            TRACK: [24, 27, 31], NEU: [166, 178, 192], AMBER: [242, 183, 64], RED: [255, 93, 82], FPS: [207, 214, 222] };
+const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const bgr = c => c[0] + (c[1] << 8) + (c[2] << 16);
+const ASC = 2210 / 2048, DESC = 514 / 2048;   // Segoe UI GDI cell
+const FAM = '"Selawik Local", "Segoe UI", sans-serif';
+const WGT = { light: 300, reg: 400, bold: 700 };
+const CPU_TEMPS = { TCPUPKG: ['CPU Package', 'PACKAGE  °C'], TCPUDIO: ['CPU Diode', 'DIODE  °C'], TCPU: ['CPU', 'CPU  °C'] };
+const GPU_TEMPS = { TGPU1DIO: ['GPU1 Diode', 'CORE  °C'], TGPU1HOT: ['GPU1 Hotspot', 'HOTSPOT  °C'], TGPU1MEM: ['GPU1 Memory', 'MEMORY  °C'] };
+const FAN_SENSORS = { FCPU: 'CPU', FCPUOPT: 'CPU OPT', FAIOPUMP: 'AIO Pump', FPUMP1: 'Pump #1', FPUMP2: 'Pump #2',
+  FCHA1: 'Chassis #1', FCHA2: 'Chassis #2', FCHA3: 'Chassis #3', FCHA4: 'Chassis #4', FCHA5: 'Chassis #5', FCHA6: 'Chassis #6', FGPU1: 'GPU1', off: 'Off' };
+const FAN_NAMES = { FCPU: 'CPU fan', FCPUOPT: 'CPU OPT', FAIOPUMP: 'AIO pump', FPUMP1: 'Pump #1', FPUMP2: 'Pump #2',
+  FCHA1: 'Chassis #1', FCHA2: 'Chassis #2', FCHA3: 'Chassis #3', FCHA4: 'Chassis #4', FCHA5: 'Chassis #5', FCHA6: 'Chassis #6', FGPU1: 'GPU fan', off: 'Off' };
+const DEFAULTS = {
+  title: '', nic: 6, netLabel: 'NIC6',
+  cpuTemp: 'TCPUPKG', gpuTemp: 'TGPU1DIO', warm: 75, hot: 88,
+  disks: [{ name: 'DISK 1', num: 1, letter: 'C' }, { name: 'DISK 2', num: 2, letter: 'D' }],
+  fans: [{ label: 'CPU FAN', id: 'FCPU', max: 3000 }, { label: 'PUMP', id: 'FAIOPUMP', max: 4500 }, { label: 'CASE 1', id: 'FCHA1', max: 3000 },
+         { label: 'CASE 2', id: 'FCHA2', max: 3000 }, { label: 'CASE 3', id: 'FCHA3', max: 3000 }, { label: 'GPU FAN', id: 'FGPU1', max: 3000 }],
+  cpuW: 200, gpuW: 450, tdpMax: 150, cpuColor: '#3dd9c5', gpuColor: '#a08cff',
+  res: '3840x2160', resW: 3840, resH: 2160, dpi: 100, hmode: 'media', dimmA: 2, dimmB: 4,
+  extras: { thr: true, limit: true, vramTemp: true, vramClk: true, memHist: true, dimm: true, hpwr: true, coolant: true, board: true, refresh: true, netx: true },
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+const clampNum = (v, lo, hi, dflt) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt; };
+const safe = s => String(s).replace(/[<>&|]/g, '');
+const ordinal = n => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
+
+function rr(ctx, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); ctx.fill();
+}
+function poly(ctx, pts) { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); }
+
+/* ================================================================ panel generator */
+function build(cfg) {
+  const items = [], imgs = new Map();
+  /* the layout is designed on a 3840x2160 grid and scaled to fit the chosen resolution */
+  const OW = cfg.resW, OH = cfg.resH, k = Math.min(OW / W, OH / H), ox = (OW - W * k) / 2, oy = (OH - H * k) / 2;
+  const X = v => ox + v * k, Y = v => oy + v * k;
+  const bg = mk(OW, OH); const d = bg.getContext('2d');
+  d.fillStyle = '#000'; d.fillRect(0, 0, OW, OH);
+  d.setTransform(k, 0, 0, k, ox, oy);
+  imgs.set('background.png', bg);
+  items.push({ kind: 'IMG', name: 'background.png', x: 0, y: 0 });
+  const CPU = hexToRgb(cfg.cpuColor), GPU = hexToRgb(cfg.gpuColor);
+
+  const font = (px, w) => `${WGT[w]} ${px}px ${FAM}`;
+  function width(s, px, w, sp = 0) { d.font = font(px, w); let t = 0, n = 0; for (const ch of s) { t += d.measureText(ch).width; n++; } return t + sp * px * Math.max(0, n - 1); }
+  function tl(x, yb, s, px, w, col, sp = 0) {
+    d.font = font(px, w); d.fillStyle = rgb(col); d.textAlign = 'left'; d.textBaseline = 'alphabetic';
+    let cx = x; for (const ch of s) { d.fillText(ch, cx, yb); cx += d.measureText(ch).width + sp * px; }
+    return cx - sp * px;
+  }
+  const tr = (x, yb, s, px, w, col, sp = 0) => tl(x - width(s, px, w, sp), yb, s, px, w, col, sp);
+  const tc = (x, yb, s, px, w, col, sp = 0) => tl(x - width(s, px, w, sp) / 2, yb, s, px, w, col, sp);
+  const hline = (x0, x1, y, col = C.HAIR, w = 2) => { d.fillStyle = rgb(col); d.fillRect(x0, y - w / 2, x1 - x0, w); };
+  const vline = (x, y0, y1, col = C.HAIR, w = 2) => { d.fillStyle = rgb(col); d.fillRect(x - w / 2, y0, w, y1 - y0); };
+  function sectionTitle(x, yb, title, sub, accent = C.TITLE) {
+    d.fillStyle = rgb(accent); d.fillRect(x, yb - 24, 6, 26);
+    const e = tl(x + 22, yb, title, 28, 'bold', C.TITLE, .16);
+    if (sub) tl(e + 26, yb, sub, 24, 'reg', C.LO, .04);
+  }
+  const caption = (x, yb, s, align = 'l', col = C.LO, px = 22) => (align === 'l' ? tl : align === 'r' ? tr : tc)(x, yb, s, px, 'bold', col, .14);
+  const gauge = (sensor, slabel, lo, hi, x, y, frames, o = {}) => items.push({ kind: 'GAUGE', sensor, slabel, lo, hi, x: X(x), y: Y(y), frames,
+    showVal: !!o.showVal, pt: o.pt ? o.pt * k : 8, font: o.font || 'Tahoma', col: o.col || [255, 255, 255] });
+  const simple = (sensor, slabel, x, baseline, pt, unit = '', col = C.HI, align = 'l', fnt = 'Segoe UI') =>
+    items.push({ kind: 'SIMPLE', sensor, slabel, x: X(x), y: Y(baseline - ASC * pt * 96 / 72), pt: pt * k, unit, col, align, font: fnt });
+  const valueCenter = (sensor, slabel, cx, cy, pt) => gauge(sensor, slabel, 0, 100, cx, cy, Array(16).fill(''), { showVal: true, pt, font: 'Segoe UI Light', col: C.HI });
+  function graph(sensor, slabel, x, y, w, h, lo, hi, col, auto = false, step = 3) {
+    items.push({ kind: 'GRAPH', sensor, slabel, x: X(x), y: Y(y), w: w * k, h: h * k, lo, hi, col, auto, step: Math.max(1, Math.round(step * k)), thick: Math.max(1, Math.round(3 * k)) });
+    for (let i = 1; i < 4; i++) hline(x, x + w, y + h * i / 4, C.GRID, 2);
+    hline(x, x + w, y + h, C.HAIR, 2);
+  }
+  const divider = text => items.push({ kind: 'DIV', text: safe(text) });
+
+  /* segmented bars: 15 segments, frame n lights n segments */
+  const barSets = new Map();
+  function barSet(name, w, h, colors, gap) {
+    if (barSets.has(name)) return barSets.get(name);
+    const segw = (w - 14 * gap) / 15, frames = [];
+    for (let n = 0; n < 16; n++) {
+      const cv = mk(w * k, h * k), x = cv.getContext('2d'); x.setTransform(k, 0, 0, k, 0, 0);
+      for (let j = 0; j < n; j++) { x.fillStyle = rgb(colors[j]); rr(x, j * (segw + gap), 0, segw, h, Math.min(3, h / 4)); }
+      const nm = `${name}_${String(n).padStart(2, '0')}.png`; imgs.set(nm, cv); frames.push(nm);
+    }
+    barSets.set(name, frames); return frames;
+  }
+  function bar(sensor, slabel, lo, hi, x, y, setname, w, h, colors, gap = 4) {
+    w = Math.round(w);
+    const frames = barSet(setname, w, h, colors, gap);
+    const segw = (w - 14 * gap) / 15; d.fillStyle = rgb(C.TRACK);
+    for (let j = 0; j < 15; j++) rr(d, x + j * (segw + gap), y, segw, h, Math.min(3, h / 4));
+    gauge(sensor, slabel, lo, hi, x, y, frames);
+  }
+  const heatColors = (lo, hi, base, n) => Array.from({ length: n }, (_, j) => { const t = lo + (j + 1) * (hi - lo) / n; return t > cfg.hot ? C.RED : t > cfg.warm ? C.AMBER : base; });
+  const levelColors = (base, warnFrom) => Array.from({ length: 15 }, (_, j) => (j + 1) / 15 > warnFrom ? C.AMBER : base);
+
+  /* rings: 30 segments as 6 gauges of 5 */
+  const SW0 = -135, PITCH = 9, SPAN = 7;
+  const segAngles = k => { const a0 = SW0 + k * PITCH + (PITCH - SPAN) / 2; return [a0, a0 + SPAN]; };
+  function arcPts(cx, cy, r0, r1, a0, a1) {
+    const n = Math.max(6, Math.floor((a1 - a0) * 3)), pts = [];
+    for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r1 * Math.sin(a), cy - r1 * Math.cos(a)]); }
+    for (let i = 0; i <= n; i++) { const a = (a1 - (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r0 * Math.sin(a), cy - r0 * Math.cos(a)]); }
+    return pts;
+  }
+  function ring(sensor, slabel, lo, hi, cx, cy, r0, r1, name, colors) {
+    const size = Math.floor(2 * r1 + 8), c = size / 2, half = size / 2, seg = (hi - lo) / 30;
+    d.fillStyle = rgb(C.TRACK);
+    for (let k = 0; k < 30; k++) { const [a, b] = segAngles(k); poly(d, arcPts(cx, cy, r0, r1, a, b)); }
+    for (let si = 0; si < 6; si++) {
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      for (let k = si * 5; k < si * 5 + 5; k++) { const [a, b] = segAngles(k); for (const [px, py] of arcPts(c, c, r0, r1, a, b)) { x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); } }
+      const bx = Math.floor(x0) - 2, by = Math.floor(y0) - 2, bw = Math.ceil(x1) + 2 - bx, bh = Math.ceil(y1) + 2 - by;
+      const names = [];
+      for (let n = 0; n <= 5; n++) {
+        const cv = mk(bw * k, bh * k), x = cv.getContext('2d'); x.setTransform(k, 0, 0, k, -bx * k, -by * k);
+        for (let k = si * 5; k < si * 5 + n; k++) { const [a, b] = segAngles(k); x.fillStyle = rgb(colors[k]); poly(x, arcPts(c, c, r0, r1, a, b)); }
+        const nm = `${name}_s${si}_${n}.png`; imgs.set(nm, cv); names.push(nm);
+      }
+      const smin = lo + si * 5 * seg;
+      gauge(sensor, slabel, smin, smin + 5 * seg, cx - half + bx, cy - half + by, Array.from({ length: 16 }, (_, s) => names[Math.floor(s / 3)]));
+    }
+  }
+
+  /* ---------------- layout ---------------- */
+  const LX0 = 96, LX1 = 1856, RX0 = 1984, RX1 = 3744;
+  vline(1920, 96, 2064);
+
+  divider('===== SUMMARY: header =====');
+  simple('STIME', 'Time', LX0, 150, 54, '', C.HI, 'l', 'Segoe UI Light');
+  simple('SDATE', 'Date', LX1, 108, 22, '', C.MID, 'r');
+  simple('SUPTIME', 'UpTime', LX1, 150, 22, '', C.MID, 'r');
+  caption(LX1 - 250, 150, 'UPTIME', 'r');
+  if (cfg.hmode === 'title' && cfg.title.trim()) tc(976, 146, cfg.title.trim().toUpperCase(), 30, 'bold', C.TITLE, .22);
+  if (cfg.hmode === 'media') {
+    caption(560, 108, 'NOW PLAYING');
+    simple('SMEDSTA', 'Media Status', 760, 108, 17, '', C.MID);
+    simple('SMEDPOS', 'Media Position', 900, 108, 17, '', C.MID);
+    simple('SMEDTIT', 'Media Title', 560, 152, 26, '', C.HI);
+  }
+  if (cfg.hmode === 'reg') { caption(560, 108, 'NOTE'); simple('SREGVALS1', 'Registry Value Str1', 560, 152, 26, '', C.HI); }
+  hline(LX0, LX1, 186); hline(RX0, RX1, 186);
+
+  const RING_CY = 600;
+  const [cpuTL, cpuTC] = CPU_TEMPS[cfg.cpuTemp];
+  const [gpuTL, gpuTC] = GPU_TEMPS[cfg.gpuTemp];
+  const GCHIP = { TGPU1DIO: ['CORE', 'TGPU1DIO', 'GPU1 Diode', ' °C'], TGPU1HOT: ['HOTSPOT', 'TGPU1HOT', 'GPU1 Hotspot', ' °C'], TGPU1MEM: ['VRAM', 'TGPU1MEM', 'GPU1 Memory', ' °C'] };
+  let gpuTempChips = cfg.gpuTemp === 'TGPU1MEM' ? ['TGPU1DIO', 'TGPU1HOT'] : cfg.gpuTemp === 'TGPU1HOT' ? ['TGPU1DIO'] : ['TGPU1HOT'];
+  if (cfg.extras.vramTemp && cfg.gpuTemp !== 'TGPU1MEM') gpuTempChips.push('TGPU1MEM');
+  for (const [title, cx, acc, loadS, loadL, tempS, tempL, tcap, chips, nm] of [
+    ['CPU', 536, CPU, 'SCPUUTI', 'CPU Utilization', cfg.cpuTemp, cpuTL, cpuTC,
+      [['CLOCK', 'SCPUCLK', 'CPU Clock', ' MHz'], ['POWER', 'PCPUPKG', 'CPU Package', ' W'], ['VCORE', 'VCPU', 'CPU Core', ' V']], 'cpu'],
+    ['GPU', 1416, GPU, 'SGPU1UTI', 'GPU1 Utilization', cfg.gpuTemp, gpuTL, gpuTC,
+      [['CLOCK', 'SGPU1CLK', 'GPU1 Clock', ' MHz'], ['POWER', 'PGPU1', 'GPU1', ' W'], ...gpuTempChips.map(id => GCHIP[id])], 'gpu'],
+  ]) {
+    divider(`===== SUMMARY: ${title} ring =====`);
+    ring(loadS, loadL, 0, 100, cx, RING_CY, 346, 380, `ring_${nm}_load`, Array(30).fill(acc));
+    ring(tempS, tempL, 20, 100, cx, RING_CY, 304, 322, `ring_${nm}_temp`, heatColors(20, 100, acc, 30));
+    for (const [a, s] of [[-135, '0'], [135, '100']]) {
+      const r = a * Math.PI / 180; tc(cx + 412 * Math.sin(r), RING_CY - 412 * Math.cos(r) + 8, s, 22, 'bold', C.LO);
+    }
+    tc(cx, RING_CY - 196, title, 40, 'bold', acc, .3);
+    valueCenter(tempS, tempL, cx, RING_CY - 58, 128);
+    caption(cx, RING_CY + 72, tcap, 'c');
+    valueCenter(loadS, loadL, cx, RING_CY + 140, 54);
+    caption(cx, RING_CY + 212, '%  LOAD', 'c');
+    const step = chips.length > 3 ? 215 : 280, x0c = cx - ((chips.length - 1) * step + 170) / 2;
+    chips.forEach(([lab, s, sl, unit], i) => { const x = x0c + i * step; caption(x, 1046, lab); simple(s, sl, x, 1104, chips.length > 3 ? 28 : 32, unit); });
+    if (nm === 'cpu' && cfg.extras.thr) { caption(cx - 14, 958, 'THROTTLING', 'r'); simple('SCPUTHR', 'CPU Throttling', cx + 14, 960, 26, ' %'); }
+    if (nm === 'gpu' && cfg.extras.limit) { caption(cx - 14, 958, 'LIMIT', 'r'); simple('SGPU1PERFCAP', 'GPU1 PerfCap Reason', cx + 14, 960, 26, ''); }
+  }
+  hline(LX0, LX1, 1150);
+
+  divider('===== SUMMARY: FPS + load history =====');
+  sectionTitle(LX0, 1220, 'FRAME RATE', 'RTSS');
+  simple('SRTSSFPS', 'RTSS FPS', LX0, 1392, 72, '', C.HI, 'l', 'Segoe UI Light');
+  caption(LX0 + 4, 1446, 'FPS');
+  if (cfg.extras.refresh) { caption(LX0 + 4, 1494, 'REFRESH'); simple('SVREFRATE', 'Vertical Refresh Rate', LX0, 1534, 24, ' Hz', C.MID); }
+  graph('SRTSSFPS', 'RTSS FPS', 360, 1262, 576, 250, 0, 240, C.FPS);
+  tr(936, 1250, '240', 20, 'bold', C.LO);
+  sectionTitle(1016, 1220, 'LOAD HISTORY');
+  graph('SCPUUTI', 'CPU Utilization', 1016, 1262, 840, 110, 0, 100, CPU);
+  graph('SGPU1UTI', 'GPU1 Utilization', 1016, 1402, 840, 110, 0, 100, GPU);
+  tl(1016, 1290, 'CPU', 20, 'bold', CPU, .14);
+  tl(1016, 1430, 'GPU', 20, 'bold', GPU, .14);
+  hline(LX0, LX1, 1570);
+
+  const TW = (LX1 - LX0 - 2 * 48) / 3;
+  [['MEMORY', 'SYSTEM RAM', 'SMEMUTI', 'Memory Utilization', 'SUSEDMEM', 'Used Memory', 'SFREEMEM', 'Free Memory'],
+   ['VRAM', 'GPU MEMORY', 'SVMEMUSAGE', 'Video Memory Utilization', 'SUSEDVMEM', 'Used Video Memory', 'SFREEVMEM', 'Free Video Memory']]
+  .forEach(([title, sub, pS, pL, uS, uL, fS, fL], i) => {
+    const x0 = LX0 + i * (TW + 48), x1 = x0 + TW;
+    divider(`===== SUMMARY: ${title} =====`);
+    sectionTitle(x0, 1640, title, sub);
+    simple(pS, pL, x0, 1772, 66, ' %', C.HI, 'l', 'Segoe UI Light');
+    if (cfg.extras.memHist) {
+      const mid = x0 + TW / 2;
+      caption(x0, 1840, 'USED'); simple(uS, uL, mid - 20, 1840, 24, ' MB', C.HI, 'r');
+      caption(mid + 20, 1840, 'FREE'); simple(fS, fL, x1, 1840, 24, ' MB', C.HI, 'r');
+      graph(pS, pL, x0, 1872, TW, 120, 0, 100, i === 0 ? CPU : GPU, false, 1);
+      hline(x0, x1, 1872 + 120 * .15, [86, 66, 26], 2);          /* 85 % mark, same point where the bar turned amber */
+      tr(x1, 1866, '85 %', 16, 'bold', [120, 92, 38], .1);
+    } else {
+      caption(x0, 1856, 'USED'); simple(uS, uL, x1, 1856, 24, ' MB', C.HI, 'r');
+      caption(x0, 1914, 'FREE'); simple(fS, fL, x1, 1914, 24, ' MB', C.HI, 'r');
+      bar(pS, pL, 0, 100, x0, 1972, 'bar_mem', TW, 20, levelColors(C.NEU, .85));
+    }
+    if (i === 0 && cfg.extras.dimm) {
+      const slots = [cfg.dimmA, cfg.dimmB].filter((v, j, a) => v > 0 && a.indexOf(v) === j);
+      caption(x1, 1716, 'DIMM  °C', 'r');
+      slots.forEach((n, j) => simple(`TDIMMTS${n}`, `${ordinal(n)} DIMM`, x1 - 96 * (slots.length - 1 - j), 1772, 30, '°', C.HI, 'r'));
+    }
+    if (i === 1 && cfg.extras.vramClk) { caption(x1, 1716, 'MEM CLOCK', 'r'); simple('SGPU1MEMCLK', 'GPU1 Memory Clock', x1, 1772, 30, ' MHz', C.HI, 'r'); }
+  });
+  {
+    const x0 = LX0 + 2 * (TW + 48), x1 = x0 + TW, n = cfg.nic;
+    divider('===== SUMMARY: network =====');
+    sectionTitle(x0, 1640, 'NETWORK', cfg.netLabel.trim().toUpperCase());
+    caption(x0, 1700, 'DOWN'); simple(`SNIC${n}DLRATE`, `NIC${n} Download Rate`, x1, 1700, 24, ' KB/s', C.HI, 'r');
+    graph(`SNIC${n}DLRATE`, `NIC${n} Download Rate`, x0, 1716, TW, 96, 0, 20000, C.NEU, true);
+    caption(x0, 1880, 'UP'); simple(`SNIC${n}ULRATE`, `NIC${n} Upload Rate`, x1, 1880, 24, ' KB/s', C.HI, 'r');
+    graph(`SNIC${n}ULRATE`, `NIC${n} Upload Rate`, x0, 1896, TW, 96, 0, 5000, C.NEU, true);
+    if (cfg.extras.netx) {
+      simple(`SNIC${n}CONNSPD`, `NIC${n} Connection Speed`, x1, 1640, 22, ' Mbps', C.MID, 'r');
+      simple(`SNIC${n}TOTDL`, `NIC${n} Total Download`, x0 + 92, 1700, 20, ' MB', C.MID);
+      simple(`SNIC${n}TOTUL`, `NIC${n} Total Upload`, x0 + 92, 1880, 20, ' MB', C.MID);
+    }
+  }
+
+  /* ---------------- right half ---------------- */
+  const COL_CLOCK_R = 2290, COL_TEMP_R = 2440, TBAR_X = 2490, TBAR_W = 440, LOAD_X = 2990, LOAD_W = RX1 - 2990;
+  sectionTitle(RX0, 130, 'CPU CORES', '6 P-CORES  ·  8 E-CORES  ·  20 THREADS', CPU);
+  caption(RX0, 238, 'CORE'); caption(COL_CLOCK_R, 238, 'CLOCK  MHZ', 'r'); caption(COL_TEMP_R, 238, 'TEMP', 'r');
+  caption(TBAR_X, 238, '30 – 100 °C'); caption(LOAD_X, 238, 'THREAD LOAD'); caption(RX1, 238, '0 – 100 %', 'r');
+  const coreCols = heatColors(30, 100, CPU, 15);
+  function coreRow(label, core, threads, cy) {
+    divider(`----- ${label} (core ${core}) -----`);
+    tl(RX0, cy + 11, label, 30, 'bold', C.MID, .06);
+    simple(`SCC-1-${core}`, `CPU #1 / Core #${core} Clock`, COL_CLOCK_R, cy + 12, 25, '', C.HI, 'r');
+    simple(`TCC-1-${core}`, `CPU #1 / Core #${core}`, COL_TEMP_R, cy + 12, 25, '°', C.HI, 'r');
+    bar(`TCC-1-${core}`, `CPU #1 / Core #${core}`, 30, 100, TBAR_X, cy - 9, 'bar_coretemp', TBAR_W, 18, coreCols);
+    const ys = threads.length === 2 ? [cy - 17, cy + 3] : [cy - 7];
+    threads.forEach((t, i) => bar(`SCPU${t}UTI`, `CPU${t} Utilization`, 0, 100, LOAD_X, ys[i], 'bar_thread', LOAD_W, 14, Array(15).fill(CPU)));
+  }
+  caption(RX0, 290, 'PERFORMANCE CORES', 'l', C.MID);
+  for (let n = 1; n <= 6; n++) coreRow(`P${n}`, n, [2 * n - 1, 2 * n], 330 + (n - 1) * 70);
+  caption(RX0, 776, 'EFFICIENT CORES', 'l', C.MID);
+  for (let m = 1; m <= 8; m++) coreRow(`E${m}`, 6 + m, [12 + m], 816 + (m - 1) * 52);
+  hline(RX0, RX1, 1250);
+
+  sectionTitle(RX0, 1300, 'POWER DRAW');
+  const PV_R = 2560, PB_X = 2610, PB_W = RX1 - PB_X;
+  const prow = [['CPU PACKAGE', 'PCPUPKG', 'CPU Package', cfg.cpuW, ' W', CPU, 'cpu'],
+   ['CPU CORES', 'PCPUIAC', 'CPU IA Cores', cfg.cpuW, ' W', CPU, 'cpu'],
+   ['GPU', 'PGPU1', 'GPU1', cfg.gpuW, ' W', GPU, 'gpu'],
+   ['GPU TDP', 'PGPU1TDPP', 'GPU1 TDP%', cfg.tdpMax, ' %', GPU, 'gpu']];
+  if (cfg.extras.hpwr) prow.push(['12VHPWR', 'PGPU112VHPWR', 'GPU1 12VHPWR', 600, ' W', GPU, 'hpwr']);
+  const pStep = prow.length > 4 ? 48 : 56, pTop = prow.length > 4 ? 1350 : 1356;
+  prow.forEach(([lab, s, sl, hi, unit, acc, nm], i) => {
+    const cy = pTop + i * pStep, w = nm === 'hpwr' ? PB_W - 210 : PB_W;
+    divider(`----- power: ${lab} -----`);
+    caption(RX0, cy + 8, lab, 'l', C.MID, 24);
+    simple(s, sl, PV_R, cy + 10, 24, unit, C.HI, 'r');
+    bar(s, sl, 0, hi, PB_X, cy - 9, `bar_power_${nm}`, w, 18, Array(15).fill(acc));
+    if (nm === 'hpwr') simple('VGPU112VHPWR', 'GPU1 12VHPWR', RX1, cy + 10, 24, ' V', C.HI, 'r');
+  });
+  caption(RX1, 1300, `0 – ${cfg.cpuW} W  ·  0 – ${cfg.gpuW} W  ·  0 – ${cfg.tdpMax} %${cfg.extras.hpwr ? '  ·  0 – 600 W' : ''}`, 'r');
+  hline(RX0, RX1, 1590);
+
+  sectionTitle(RX0, 1640, 'STORAGE');
+  caption(COL_CLOCK_R, 1690, 'TEMP', 'r'); caption(COL_TEMP_R, 1690, 'USED', 'r'); caption(TBAR_X, 1690, 'SPACE USED');
+  caption(3330, 1690, 'READ  MB/S', 'r'); caption(RX1, 1690, 'WRITE  MB/S', 'r');
+  cfg.disks.forEach((dk, i) => {
+    const t = 1712 + i * 96, num = dk.num, L = dk.letter;
+    divider(`----- storage: disk ${num} / ${L}: -----`);
+    const e = tl(RX0, t + 36, (dk.name.trim() || `DISK ${num}`).toUpperCase(), 28, 'bold', C.MID, .06);
+    tl(Math.max(RX0 + 140, e + 18), t + 36, `${L}:`, 28, 'reg', C.LO);
+    simple(`THDD${num}`, `${ordinal(num)} HDD`, COL_CLOCK_R, t + 37, 25, '°', C.HI, 'r');
+    simple(`SDRV${L}UTI`, `Drive ${L}: Utilization`, COL_TEMP_R, t + 37, 25, ' %', C.HI, 'r');
+    bar(`SDRV${L}UTI`, `Drive ${L}: Utilization`, 0, 100, TBAR_X, t + 18, 'bar_used', TBAR_W, 18, levelColors(C.NEU, .87));
+    simple(`SDSK${num}READSPD`, `Disk ${num} Read Speed`, 3330, t + 37, 25, '', C.HI, 'r');
+    simple(`SDSK${num}WRITESPD`, `Disk ${num} Write Speed`, RX1, t + 37, 25, '', C.HI, 'r');
+    caption(RX0, t + 76, 'ACTIVITY', 'l', C.LO, 18);
+    bar(`SDSK${num}ACT`, `Disk ${num} Activity`, 0, 100, TBAR_X, t + 64, 'bar_activity', RX1 - TBAR_X, 10, Array(15).fill(C.NEU));
+  });
+  hline(RX0, RX1, 1920);
+
+  sectionTitle(RX0, 1966, 'COOLING', cfg.extras.coolant ? 'RPM  ·  °C' : 'RPM');
+  if (cfg.extras.board) {
+    divider('----- board temperatures -----');
+    [['BOARD', 'TMOBO', 'Motherboard'], ['VRM', 'TVRM', 'VRM'], ['PCH', 'TPCH', 'PCH']].forEach(([lab, s, sl], k) => {
+      const sx = RX1 - 230 * (3 - k);
+      caption(sx, 1966, lab, 'l', C.MID); simple(s, sl, sx + 200, 1967, 24, '°', C.HI, 'r');
+    });
+  }
+  const cells = cfg.fans.filter(f => f.id !== 'off').map(f => ({ lab: (f.label.trim() || FAN_NAMES[f.id]).toUpperCase(), id: f.id, sl: FAN_SENSORS[f.id], lo: 0, hi: f.max, unit: '', cols: Array(15).fill(C.NEU) }));
+  if (cfg.extras.coolant) cells.unshift({ lab: 'COOLANT', id: 'TWATER', sl: 'Water', lo: 20, hi: 50, unit: '°', cols: levelColors(C.NEU, .67) });
+  if (cells.length) {
+    const FT_W = (RX1 - RX0 - (cells.length - 1) * 32) / cells.length;
+    cells.forEach((f, i) => {
+      const x0 = RX0 + i * (FT_W + 32), x1 = x0 + FT_W;
+      divider(`----- cooling: ${f.lab} -----`);
+      caption(x0, 2014, f.lab, 'l', C.MID);
+      simple(f.id, f.sl, x1, 2016, 24, f.unit, C.HI, 'r');
+      bar(f.id, f.sl, f.lo, f.hi, x0, 2034, f.id === 'TWATER' ? `bar_coolant_${Math.round(FT_W)}` : `bar_fan_${Math.round(FT_W)}`, FT_W, 14, f.cols, 3);
+    });
+  }
+  return { items, imgs, w: OW, h: OH, k };
+}
+
+/* ================================================================ preview: simulated sensors */
+const S = {}, HIST = {};
+const sv = id => (S[id] ||= { val: 0, mu: 0, sigma: 0, dec: 0, min: 0, max: 1e9, fresh: true });
+function setMu(id, v, sigma, dec, min, max, snap) {
+  const s = sv(id); s.mu = v; s.sigma = sigma; s.dec = dec; s.min = min; s.max = max;
+  if (snap || s.fresh) { s.val = v; if (s.fresh) HIST[id] = Array(620).fill(v); s.fresh = false; }
+}
+const SCEN = {
+  idle:   { pt: [6, 2], et: 2, pclk: 1600, eclk: 1200, ctemp: 36, pkg: 14, ia: 6, v: .78, gpu: 2, gt: 34, hot: 42, gmem: 38, gclk: 210, gp: 22, tdp: 6, fps: 0, ram: 31, vram: 9, dl: 40, ul: 12, rd: 2, wr: 1, act: 1, fan: 600, pump: 2100, gfan: 0 },
+  gaming: { pt: [62, 28], et: 18, pclk: 5100, eclk: 3900, ctemp: 64, pkg: 92, ia: 78, v: 1.245, gpu: 97, gt: 66, hot: 79, gmem: 72, gclk: 2745, gp: 318, tdp: 91, fps: 141, ram: 49, vram: 71, dl: 2400, ul: 180, rd: 85, wr: 6, act: 9, fan: 960, pump: 2600, gfan: 1650 },
+  render: { pt: [100, 100], et: 100, pclk: 4800, eclk: 3700, ctemp: 90, pkg: 181, ia: 166, v: 1.19, gpu: 6, gt: 41, hot: 50, gmem: 44, gclk: 900, gp: 46, tdp: 13, fps: 0, ram: 64, vram: 14, dl: 120, ul: 30, rd: 410, wr: 220, act: 38, fan: 1480, pump: 2800, gfan: 0 },
+};
+let scen = 'gaming';
+function applyScenario(snap) {
+  const c = SCEN[scen], set = (id, v, sg, dec = 0, mn = 0, mx = 1e9) => setMu(id, v, sg, dec, mn, mx, snap);
+  for (let n = 1; n <= 6; n++) {
+    const w = (n % 3) * 7 - 7;
+    set(`SCC-1-${n}`, c.pclk - (n % 2) * 100, 40, 0, 400, 6000); set(`TCC-1-${n}`, c.ctemp + (n % 3) * 2 - 1, 1.2, 0, 20, 110);
+    set(`SCPU${2 * n - 1}UTI`, Math.min(100, Math.max(0, c.pt[0] + w)), 7, 0, 0, 100); set(`SCPU${2 * n}UTI`, Math.min(100, Math.max(0, c.pt[1] + w / 2)), 7, 0, 0, 100);
+  }
+  for (let m = 1; m <= 8; m++) { set(`SCC-1-${6 + m}`, c.eclk, 40, 0, 400, 5000); set(`TCC-1-${6 + m}`, c.ctemp - 6 + (m % 4), 1, 0, 20, 110); set(`SCPU${12 + m}UTI`, Math.min(100, Math.max(0, c.et + (m % 4) * 4 - 6)), 6, 0, 0, 100); }
+  const avg = (c.pt[0] + c.pt[1]) / 2 * .6 + c.et * .4;
+  set('SCPUUTI', avg, 3, 0, 0, 100); set('SCPUCLK', c.pclk, 40, 0, 400, 6000); set('PCPUPKG', c.pkg, 4, 1, 0, 600); set('PCPUIAC', c.ia, 4, 1, 0, 600); set('VCPU', c.v, .01, 3, .5, 1.6);
+  for (const id of ['TCPUPKG', 'TCPUDIO', 'TCPU']) set(id, c.ctemp + 3, .8, 0, 20, 110);
+  const xs = { idle: [0, 405, 36, 29, 34, 40, 45, 12.11], gaming: [0, 10501, 44, 33, 38, 52, 50, 11.98], render: [4, 810, 49, 38, 41, 68, 52, 12.08] }[scen];
+  set('SCPUTHR', xs[0], 0, 0, 0, 100); set('SGPU1MEMCLK', xs[1], 0, 0, 0, 30000); set(`TDIMMTS${cfg.dimmA}`, xs[2], .2, 0, 20, 100); if (cfg.dimmB) set(`TDIMMTS${cfg.dimmB}`, xs[2] + 1, .2, 0, 20, 100);
+  set('TWATER', xs[3], .1, 1, 15, 70); set('TMOBO', xs[4], .2, 0, 15, 100); set('TVRM', xs[5], .4, 0, 15, 120); set('TPCH', xs[6], .2, 0, 15, 100);
+  set('PGPU112VHPWR', c.gp * .92, 7, 1, 0, 700); set('VGPU112VHPWR', xs[7], .01, 3, 11, 13); set('SVREFRATE', 165, 0, 0, 0, 500);
+  set(`SNIC${cfg.nic}TOTDL`, 15320, 0, 0, 0, 1e9); set(`SNIC${cfg.nic}TOTUL`, 1240, 0, 0, 0, 1e9); set(`SNIC${cfg.nic}CONNSPD`, 2500, 0, 0, 0, 1e6);
+  STRS.SGPU1PERFCAP = { idle: 'Idle', gaming: 'Power', render: 'Utilization' }[scen];
+  set('SGPU1UTI', c.gpu, 2, 0, 0, 100); set('TGPU1DIO', c.gt, .5, 0, 20, 110); set('TGPU1HOT', c.hot, .6, 0, 20, 115); set('TGPU1MEM', c.gmem, .5, 0, 20, 110);
+  set('SGPU1CLK', c.gclk, 15, 0, 200, 3200); set('PGPU1', c.gp, 8, 1, 0, 1000); set('PGPU1TDPP', c.tdp, 2, 0, 0, 200); set('SRTSSFPS', c.fps, c.fps ? 5 : 0, 0, 0, 300);
+  set('SMEMUTI', c.ram, .3, 0, 0, 100); set('SUSEDMEM', 327.68 * c.ram, 60, 0, 0, 32768); set('SFREEMEM', 327.68 * (100 - c.ram), 60, 0, 0, 32768);
+  set('SVMEMUSAGE', c.vram, .4, 0, 0, 100); set('SUSEDVMEM', 163.84 * c.vram, 50, 0, 0, 16384); set('SFREEVMEM', 163.84 * (100 - c.vram), 50, 0, 0, 16384);
+  set(`SNIC${cfg.nic}DLRATE`, c.dl, c.dl * .3, 1, 0, 120000); set(`SNIC${cfg.nic}ULRATE`, c.ul, c.ul * .3, 1, 0, 40000);
+  cfg.disks.forEach((dk, i) => {
+    set(`THDD${dk.num}`, 38 - i * 4 + c.act / 10, .2, 0, 20, 90); set(`SDRV${dk.letter}UTI`, [63, 41][i], 0, 0, 0, 100);
+    set(`SDSK${dk.num}READSPD`, c.rd / (i ? 8 : 1), 6, 1, 0, 7000); set(`SDSK${dk.num}WRITESPD`, c.wr / (i ? 6 : 1), 3, 1, 0, 7000); set(`SDSK${dk.num}ACT`, c.act / (i ? 5 : 1), 2, 0, 0, 100);
+  });
+  cfg.fans.forEach((f, i) => { if (f.id === 'off') return; const base = /PUMP/.test(f.id) ? c.pump : f.id === 'FGPU1' ? c.gfan : c.fan + (i % 3) * 20; set(f.id, base, base ? 12 : 0, 0, 0, 9000); });
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sc === scen)));
+}
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function tick() {
+  for (const [id, s] of Object.entries(S)) {
+    s.val += .35 * (s.mu - s.val) + s.sigma * gauss();
+    s.val = Math.max(s.min, Math.min(s.max, s.val));
+    (HIST[id] ||= []).push(s.val); if (HIST[id].length > 700) HIST[id].shift();
+  }
+}
+const t0 = Date.now() - (3 * 3600 + 12 * 60) * 1000;
+const pad = n => String(n).padStart(2, '0');
+const STRS = { SMEDTIT: 'Midnight City', SMEDSTA: 'Playing', SMEDPOS: '2:41', SREGVALS1: 'Build passing · 3 reviews waiting', SGPU1PERFCAP: 'Power' };
+function fmtVal(id, v) {
+  if (id in STRS) return STRS[id];
+  const d = new Date();
+  if (id === 'STIME') return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (id === 'SDATE') return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  if (id === 'SUPTIME') { const s = Math.floor((Date.now() - t0) / 1000); return `${Math.floor(s / 3600)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`; }
+  return v.toFixed(S[id]?.dec || 0);
+}
+
+/* ================================================================ preview renderer (mirrors AIDA64's item rules) */
+const cv = document.getElementById('cv'); cv.width = W; cv.height = H;
+function sizeCanvas(w, h) { if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } cv.style.aspectRatio = `${w} / ${h}`; }
+const ctx = cv.getContext('2d', { willReadFrequently: true });
+const stateOf = (v, min, max) => { if (!(max > min)) return 0; return Math.max(0, Math.min(15, Math.floor((v - min) / (max - min) * 15 + 1e-9))); };
+function fontSpec(name, pt) {
+  const px = pt * 96 / 72, light = /light/i.test(name);
+  return { css: `${light ? 300 : 400} ${px}px "Segoe UI${light ? ' Light' : ''}", "Selawik Local", sans-serif`, asc: ASC * px, desc: DESC * px };
+}
+let MODEL = null;
+function drawGraph(it) {
+  const hist = HIST[it.sensor] || [], n = Math.min(hist.length, Math.ceil(it.w / it.step) + 1);
+  it = { ...it, x: Math.round(it.x), y: Math.round(it.y), w: Math.round(it.w), h: Math.round(it.h) };
+  let min = it.lo, max = it.hi;
+  if (it.auto) { let m = 0; for (let i = 0; i < n; i++) m = Math.max(m, hist[hist.length - 1 - i]); max = Math.max(m * 1.15, 1); min = 0; }
+  if (n < 2) return;
+  ctx.save(); ctx.beginPath(); ctx.rect(it.x, it.y, it.w, it.h + 1); ctx.clip(); ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const t = Math.max(0, Math.min(1, (hist[hist.length - 1 - i] - min) / (max - min)));
+    const x = it.x + it.w - i * it.step, y = it.y + it.h - t * (it.h - 2);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.strokeStyle = rgb(it.col); ctx.lineWidth = it.thick; ctx.lineJoin = 'round'; ctx.stroke(); ctx.restore();
+}
+function draw() {
+  if (!MODEL) return;
+  sizeCanvas(MODEL.w, MODEL.h);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, MODEL.w, MODEL.h);
+  for (const it of MODEL.items) {
+    if (it.kind === 'IMG') ctx.drawImage(MODEL.imgs.get(it.name), it.x, it.y);
+    else if (it.kind === 'GAUGE') {
+      const v = S[it.sensor]?.val ?? 0, fr = it.frames[stateOf(v, it.lo, it.hi)];
+      if (fr) ctx.drawImage(MODEL.imgs.get(fr), Math.round(it.x), Math.round(it.y));
+      if (it.showVal) { const f = fontSpec(it.font, it.pt); ctx.font = f.css; ctx.fillStyle = rgb(it.col); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(fmtVal(it.sensor, v), it.x, it.y - (f.asc + f.desc) / 2 + f.asc); }
+    } else if (it.kind === 'SIMPLE') {
+      const f = fontSpec(it.font, it.pt), v = S[it.sensor]?.val ?? 0;
+      ctx.font = f.css; ctx.fillStyle = rgb(it.col); ctx.textAlign = it.align === 'r' ? 'right' : 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(fmtVal(it.sensor, v) + it.unit, Math.round(it.x), Math.round(it.y) + f.asc);
+    } else if (it.kind === 'GRAPH') drawGraph(it);
+  }
+}
+function measureLit() {
+  const d = ctx.getImageData(0, 0, cv.width, cv.height).data; let lit = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i] > 6 || d[i + 1] > 6 || d[i + 2] > 6) lit++;
+  document.getElementById('st-lit').textContent = (lit / (cv.width * cv.height) * 100).toFixed(1) + ' %';
+}
+
+/* ================================================================ .sensorpanel writer */
+const fmtNum = v => { const s = Number(v).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''); return s === '-0' || s === '' ? '0' : s; };
+const HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0').toUpperCase());
+function toHex(u8) { const parts = []; for (let i = 0; i < u8.length; i += 32768) { let s = ''; const e = Math.min(u8.length, i + 32768); for (let j = i; j < e; j++) s += HEX[u8[j]]; parts.push(s); } return parts.join(''); }
+const pngBytes = c => new Promise((res, rej) => c.toBlob(b => b ? b.arrayBuffer().then(a => res(new Uint8Array(a)), rej) : rej(new Error('PNG encoding failed')), 'image/png'));
+async function writePanel(model, progress, dpi = 100) {
+  const s = dpi / 100, P = v => Math.round(v / s), T = pt => Math.max(1, Math.round(pt / s));
+  const used = new Set();
+  for (const it of model.items) if (it.kind === 'GAUGE') it.frames.forEach(f => f && used.add(f));
+  const names = ['background.png', ...[...used].sort()];
+  const hex = new Map();
+  for (let i = 0; i < names.length; i++) { hex.set(names[i], toHex(await pngBytes(model.imgs.get(names[i])))); if (i % 12 === 0) progress(i / names.length); }
+  const L = ['<SPVER>100</SPVER><SWVER>7.35.7000</SWVER>', `<SPWIDTH>${P(model.w)}</SPWIDTH><SPHEIGHT>${P(model.h)}</SPHEIGHT><SPBGCOLOR>0</SPBGCOLOR>`];
+  for (const it of model.items) {
+    if (it.kind === 'IMG') L.push(`<ID>IMG</ID><URL></URL><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY><IMGFIL>${it.name}</IMGFIL><IMGDAT>${hex.get(it.name)}</IMGDAT>`);
+    else if (it.kind === 'DIV') L.push(`<ID>-LBL</ID><TXTSIZ>8</TXTSIZ><FNTNAM></FNTNAM><LBL>${it.text}</LBL><LBLCOL>16777215</LBLCOL><LBLBIS>000</LBLBIS><SHDCOL>0</SHDCOL><SHDDIS>1</SHDDIS><SHDDEP>1</SHDDEP><URL></URL><ITMX>0</ITMX><ITMY>0</ITMY>`);
+    else if (it.kind === 'GAUGE') L.push(`<ID>[GAUGE]${it.sensor}</ID><LBL>${it.slabel}</LBL><TYP>Custom</TYP><SIZ>S</SIZ><MINVAL>${fmtNum(it.lo)}</MINVAL><MAXVAL>${fmtNum(it.hi)}</MAXVAL><SHWICO>0</SHWICO><SHWVAL>${it.showVal ? 1 : 0}</SHWVAL><TXTSIZ>${it.showVal ? T(it.pt) : 8}</TXTSIZ><FNTNAM>${it.font}</FNTNAM><VALCOL>${bgr(it.col)}</VALCOL><VALBI>00</VALBI><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY><STAFLS>${it.frames.join('|')}</STAFLS>`);
+    else if (it.kind === 'SIMPLE') L.push(`<ID>[SIMPLE]${it.sensor}</ID><TXTSIZ>${T(it.pt)}</TXTSIZ><FNTNAM>${it.font}</FNTNAM><TXTCOL>${bgr(it.col)}</TXTCOL><TXTBIR>00${it.align === 'r' ? 1 : 0}</TXTBIR><SHWLBL>0</SHWLBL><LBL>${it.slabel}</LBL><SHWUNT>${it.unit ? 1 : 0}</SHWUNT><UNT>${it.unit}</UNT><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY>`);
+    else if (it.kind === 'GRAPH') L.push(`<ID>[GRAPH]${it.sensor}</ID><LBL>${it.slabel}</LBL><TYP>LG</TYP><WID>${P(it.w)}</WID><HEI>${P(it.h)}</HEI><GPHSTP>${it.step}</GPHSTP><GPHTCK>${it.thick}</GPHTCK><GRDDNS>40</GRDDNS><MINVAL>${fmtNum(it.lo)}</MINVAL><MAXVAL>${fmtNum(it.hi)}</MAXVAL><AUTSCL>${it.auto ? 1 : 0}</AUTSCL><GRDCOL>${bgr(C.GRID)}</GRDCOL><GPHCOL>${bgr(it.col)}</GPHCOL><BGCOL>0</BGCOL><FRMCOL>${bgr(C.HAIR)}</FRMCOL><GPHBFG>000</GPHBFG><SHWSCL>0</SHWSCL><TXTSIZ>8</TXTSIZ><FNTNAM>Segoe UI</FNTNAM><SCLCOL>${bgr(C.LO)}</SCLCOL><SCLBI>000</SCLBI><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY>`);
+  }
+  for (const n of names.slice(1)) L.push(`<GAUSTAFNM>${n}</GAUSTAFNM><GAUSTADAT>${hex.get(n)}</GAUSTADAT>`);
+  const text = L.join('\r\n') + '\r\n';
+  const out = new Uint8Array(text.length);        // Windows-1252: AIDA64 files store ° as one byte
+  for (let i = 0; i < text.length; i++) { const c = text.charCodeAt(i); out[i] = c < 256 ? c : 63; }
+  progress(1);
+  return out;
+}
+
+/* ---- minimal single-file ZIP (deflate when the browser can) ---- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function deflateRaw(u8) {
+  if (typeof CompressionStream === 'undefined') return null;
+  try { return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()); } catch (e) { return null; }
+}
+async function makeZip(name, data) {
+  const nb = new TextEncoder().encode(name), crc = crc32(data);
+  let comp = await deflateRaw(data), method = 8;
+  if (!comp || comp.length >= data.length) { comp = data; method = 0; }
+  const now = new Date(), dt = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), dd = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const lh = new DataView(new ArrayBuffer(30));
+  [[0, 0x04034b50, 4], [4, 20, 2], [6, 0, 2], [8, method, 2], [10, dt, 2], [12, dd, 2], [14, crc, 4], [18, comp.length, 4], [22, data.length, 4], [26, nb.length, 2], [28, 0, 2]]
+    .forEach(([o, v, s]) => s === 4 ? lh.setUint32(o, v, true) : lh.setUint16(o, v, true));
+  const cd = new DataView(new ArrayBuffer(46));
+  [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0, 2], [10, method, 2], [12, dt, 2], [14, dd, 2], [16, crc, 4], [20, comp.length, 4], [24, data.length, 4], [28, nb.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, 0, 4]]
+    .forEach(([o, v, s]) => s === 4 ? cd.setUint32(o, v, true) : cd.setUint16(o, v, true));
+  const eo = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, 1, 2], [10, 1, 2], [12, 46 + nb.length, 4], [16, 30 + nb.length + comp.length, 4], [20, 0, 2]]
+    .forEach(([o, v, s]) => s === 4 ? eo.setUint32(o, v, true) : eo.setUint16(o, v, true));
+  return new Blob([lh, nb, comp, cd, nb, eo], { type: 'application/zip' });
+}
+
+/* ================================================================ settings UI */
+const STORE_KEY = 'modern-split-builder-v1';
+let cfg = clone(DEFAULTS);
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved && typeof saved === 'object') cfg = sanitize({ ...clone(DEFAULTS), ...saved }); } catch (e) {}
+function sanitize(c) {
+  const d = clone(DEFAULTS);
+  const o = { ...d, ...c };
+  o.title = String(o.title || '').slice(0, 24);
+  if (!['media', 'title', 'reg', 'none'].includes(o.hmode)) o.hmode = c.hmode === undefined && o.title ? 'title' : d.hmode;
+  o.dimmA = clampNum(o.dimmA, 1, 8, 2); o.dimmB = clampNum(o.dimmB, 0, 8, 4);
+  o.extras = Object.fromEntries(Object.keys(d.extras).map(k => [k, typeof (c.extras || {})[k] === 'boolean' ? c.extras[k] : d.extras[k]]));
+  o.nic = clampNum(o.nic, 1, 16, 6); o.netLabel = String(o.netLabel ?? '').slice(0, 16);
+  if (!CPU_TEMPS[o.cpuTemp]) o.cpuTemp = d.cpuTemp; if (!GPU_TEMPS[o.gpuTemp]) o.gpuTemp = d.gpuTemp;
+  o.warm = clampNum(o.warm, 40, 110, 75); o.hot = clampNum(o.hot, 40, 115, 88);
+  o.disks = d.disks.map((dd, i) => { const x = (c.disks || [])[i] || {}; return { name: String(x.name ?? dd.name).slice(0, 12), num: clampNum(x.num, 1, 8, dd.num), letter: /^[C-Z]$/.test(x.letter) ? x.letter : dd.letter }; });
+  o.fans = d.fans.map((df, i) => { const x = (c.fans || [])[i] || {}; return { label: String(x.label ?? df.label).slice(0, 12), id: FAN_SENSORS[x.id] ? x.id : df.id, max: clampNum(x.max, 500, 9000, df.max) }; });
+  o.cpuW = clampNum(o.cpuW, 50, 600, 200); o.gpuW = clampNum(o.gpuW, 50, 1000, 450); o.tdpMax = clampNum(o.tdpMax, 100, 200, 150);
+  o.resW = Math.round(clampNum(o.resW, 960, 7680, 3840) / 2) * 2; o.resH = Math.round(clampNum(o.resH, 540, 4320, 2160) / 2) * 2;
+  o.dpi = Math.round(clampNum(o.dpi, 100, 300, 100) / 25) * 25; if (typeof o.res !== 'string') o.res = 'custom';
+  if (!/^#[0-9a-f]{6}$/i.test(o.cpuColor)) o.cpuColor = d.cpuColor; if (!/^#[0-9a-f]{6}$/i.test(o.gpuColor)) o.gpuColor = d.gpuColor;
+  return o;
+}
+const $ = id => document.getElementById(id);
+const nicSel = $('s-nic');
+for (let n = 1; n <= 16; n++) nicSel.append(new Option(`NIC${n}`, n));
+const letters = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+document.querySelectorAll('.diskrow').forEach(row => {
+  const i = +row.dataset.i;
+  row.innerHTML = `<input type="text" id="d${i}-name" maxlength="12" aria-label="Disk ${i + 1} name"><select id="d${i}-num" aria-label="Disk ${i + 1} AIDA64 disk number"></select><select id="d${i}-letter" aria-label="Disk ${i + 1} drive letter"></select>`;
+  for (let n = 1; n <= 8; n++) row.querySelector(`#d${i}-num`).append(new Option(`Disk ${n}`, n));
+  letters.forEach(L => row.querySelector(`#d${i}-letter`).append(new Option(`${L}:`, L)));
+});
+document.querySelectorAll('.fanrow').forEach(row => {
+  const i = +row.dataset.i;
+  row.innerHTML = `<input type="text" id="f${i}-label" maxlength="12" aria-label="Fan ${i + 1} label"><select id="f${i}-id" aria-label="Fan ${i + 1} sensor"></select><input type="number" id="f${i}-max" min="500" max="9000" step="100" aria-label="Fan ${i + 1} max RPM">`;
+  Object.entries(FAN_NAMES).forEach(([id, nm]) => row.querySelector(`#f${i}-id`).append(new Option(nm, id)));
+});
+
+for (let n = 1; n <= 8; n++) { $('x-dimm-a').append(new Option(`${ordinal(n)} DIMM`, n)); }
+$('x-dimm-b').append(new Option('None', 0)); for (let n = 1; n <= 8; n++) $('x-dimm-b').append(new Option(`${ordinal(n)} DIMM`, n));
+function fillForm() {
+  $('x-dimm-a').value = cfg.dimmA; $('x-dimm-b').value = cfg.dimmB;
+  $('s-res').value = cfg.res; if ($('s-res').value !== cfg.res) { $('s-res').value = 'custom'; cfg.res = 'custom'; }
+  $('s-w').value = cfg.resW; $('s-h').value = cfg.resH; $('s-dpi').value = cfg.dpi; syncDisplayUI();
+  $('s-hmode').value = cfg.hmode;
+  for (const [k, id] of Object.entries(XMAP)) $(id).checked = cfg.extras[k];
+  syncHeaderUI();
+  $('s-title').value = cfg.title; $('s-cputemp').value = cfg.cpuTemp; $('s-gputemp').value = cfg.gpuTemp;
+  $('s-warm').value = cfg.warm; $('s-hot').value = cfg.hot; nicSel.value = cfg.nic; $('s-netlabel').value = cfg.netLabel;
+  cfg.disks.forEach((dk, i) => { $(`d${i}-name`).value = dk.name; $(`d${i}-num`).value = dk.num; $(`d${i}-letter`).value = dk.letter; });
+  cfg.fans.forEach((f, i) => { $(`f${i}-label`).value = f.label; $(`f${i}-id`).value = f.id; $(`f${i}-max`).value = f.max; $(`f${i}-label`).disabled = $(`f${i}-max`).disabled = f.id === 'off'; });
+  $('s-cpuw').value = cfg.cpuW; $('s-gpuw').value = cfg.gpuW; $('s-tdp').value = cfg.tdpMax;
+  $('s-cpucol').value = cfg.cpuColor; $('s-gpucol').value = cfg.gpuColor;
+}
+function readForm() {
+  const prevNic = cfg.nic;
+  const res = $('s-res').value;
+  if (res !== 'custom') { const [w, h] = res.split('x').map(Number); $('s-w').value = w; $('s-h').value = h; }
+  const next = {
+    res, resW: +$('s-w').value, resH: +$('s-h').value, dpi: +$('s-dpi').value,
+    hmode: $('s-hmode').value, dimmA: +$('x-dimm-a').value, dimmB: +$('x-dimm-b').value, extras: Object.fromEntries(Object.entries(XMAP).map(([k, id]) => [k, $(id).checked])),
+    title: $('s-title').value, cpuTemp: $('s-cputemp').value, gpuTemp: $('s-gputemp').value,
+    warm: $('s-warm').value, hot: $('s-hot').value, nic: +nicSel.value, netLabel: $('s-netlabel').value,
+    disks: [0, 1].map(i => ({ name: $(`d${i}-name`).value, num: +$(`d${i}-num`).value, letter: $(`d${i}-letter`).value })),
+    fans: [0, 1, 2, 3, 4, 5].map(i => ({ label: $(`f${i}-label`).value, id: $(`f${i}-id`).value, max: $(`f${i}-max`).value })),
+    cpuW: $('s-cpuw').value, gpuW: $('s-gpuw').value, tdpMax: $('s-tdp').value, cpuColor: $('s-cpucol').value, gpuColor: $('s-gpucol').value,
+  };
+  if (next.nic !== prevNic && (next.netLabel.trim() === '' || next.netLabel.trim().toUpperCase() === `NIC${prevNic}`)) { next.netLabel = `NIC${next.nic}`; $('s-netlabel').value = next.netLabel; }
+  cfg = sanitize(next);
+  syncDisplayUI(); syncHeaderUI();
+  cfg.fans.forEach((f, i) => { $(`f${i}-label`).disabled = $(`f${i}-max`).disabled = f.id === 'off'; });
+}
+
+const XMAP = { thr: 'x-thr', limit: 'x-limit', vramTemp: 'x-vramtemp', vramClk: 'x-vramclk', memHist: 'x-memhist', dimm: 'x-dimm', hpwr: 'x-hpwr', coolant: 'x-coolant', board: 'x-board', refresh: 'x-refresh', netx: 'x-netx' };
+function syncHeaderUI() {
+  $('dimm-row').hidden = !$('x-dimm').checked;
+  const m = $('s-hmode').value;
+  $('title-row').hidden = m !== 'title';
+  $('hmode-hint').textContent = m === 'media' ? 'Title, play state and position from the media players AIDA64 supports. Very long titles can run into the uptime.'
+    : m === 'reg' ? 'Shows text a script writes to HKCU\\Software\\FinalWire\\AIDA64\\ImportValues as the string value Str1.'
+    : m === 'title' ? 'Fixed text, drawn into the background.' : '';
+}
+function syncDisplayUI() {
+  $('custom-res').hidden = $('s-res').value !== 'custom';
+  $('o-dpi').textContent = cfg.dpi + ' %';
+  const s = cfg.dpi / 100, fw = Math.round(cfg.resW / s), fh = Math.round(cfg.resH / s);
+  const k = Math.min(cfg.resW / W, cfg.resH / H), bars = Math.abs(cfg.resW / cfg.resH - 16 / 9) > .01 ? ' The 16:9 layout is centred, with black space filling the rest.' : '';
+  $('res-readout').textContent = cfg.dpi === 100
+    ? `Exports a ${cfg.resW} × ${cfg.resH} panel, drawn pixel for pixel.${bars}`
+    : `Exports a ${fw} × ${fh} panel. At ${cfg.dpi} % AIDA64 draws it ${cfg.resW} × ${cfg.resH}, and images are already made at that size.${bars}`;
+  if (k < .6) $('res-readout').textContent += ' Small labels get hard to read below about 2304 px wide.';
+}
+const fileName = () => `Modern_Split_${cfg.resW}x${cfg.resH}${cfg.dpi !== 100 ? `_${cfg.dpi}pct` : ''}.sensorpanel`;
+let rebuildTimer = 0;
+function rebuild() {
+  $('busy').hidden = false;
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(() => {
+    MODEL = build(cfg);
+    applyScenario(false);
+    draw(); measureLit();
+    $('busy').hidden = true;
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(cfg)); } catch (e) {}
+    setStatus(''); updateExportUI();
+  }, 120);
+}
+$('settings').addEventListener('input', () => { readForm(); rebuild(); });
+$('settings').addEventListener('change', () => { readForm(); rebuild(); });
+$('settings').addEventListener('submit', e => e.preventDefault());
+$('reset').addEventListener('click', () => { cfg = clone(DEFAULTS); fillForm(); rebuild(); });
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => { scen = b.dataset.sc; applyScenario(true); draw(); measureLit(); }));
+
+/* ================================================================ export */
+const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+let downloads = null, downloadsChecked = !inViewer;
+function setStatus(t, cls = '') { const s = $('exp-status'); s.textContent = t; s.className = cls; }
+function updateExportUI() {
+  const btn = $('export'), hint = $('exp-hint');
+  const FILE = fileName();
+  if (inViewer && downloads) { btn.textContent = 'Export .zip'; hint.textContent = `This viewer saves .zip files. Unzip it to get ${FILE}.`; btn.disabled = false; }
+  else if (inViewer && downloadsChecked) { btn.disabled = true; hint.textContent = 'Saving files isn’t available in this view. Open the HTML version of this builder on your PC to export.'; }
+  else if (inViewer) { btn.disabled = true; hint.textContent = 'Checking whether this view can save files…'; }
+  else { btn.textContent = 'Export .sensorpanel'; btn.disabled = false; hint.textContent = `Saves ${FILE} with every image embedded.`; }
+}
+if (inViewer) window.claude.use('downloads').then(d => { downloads = d; downloadsChecked = true; updateExportUI(); }, () => { downloadsChecked = true; updateExportUI(); });
+updateExportUI();
+
+$('export').addEventListener('click', async () => {
+  const btn = $('export'); btn.disabled = true;
+  try {
+    clearTimeout(rebuildTimer); readForm(); MODEL = build(cfg); applyScenario(false); draw();
+    const FILE = fileName();
+    const bytes = await writePanel(MODEL, p => setStatus(`Building… ${Math.round(p * 100)} %`), cfg.dpi);
+    if (inViewer && downloads) {
+      setStatus('Compressing…');
+      const zip = await makeZip(FILE, bytes);
+      setStatus('Waiting for you to confirm the save…');
+      try { await downloads.save({ filename: FILE.replace(/\.sensorpanel$/, '.zip'), data: zip }); setStatus('Saved. Unzip it, then import the .sensorpanel file.', 'ok'); }
+      catch (e) {
+        const code = e && e.code;
+        if (code === 'declined') setStatus('Save cancelled.');
+        else if (code === 'rate_limited') setStatus('A save prompt is already open. Finish that one first.', 'err');
+        else setStatus('This view couldn’t save the file. Open the HTML version on your PC to export.', 'err');
+      }
+    } else {
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+      const a = document.createElement('a'); a.href = url; a.download = FILE; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setStatus(`Exported ${FILE} (${(bytes.length / 1e6).toFixed(1)} MB).`, 'ok');
+    }
+  } catch (e) {
+    setStatus('Export failed: ' + (e && e.message ? e.message : 'unknown error'), 'err');
+  } finally { btn.disabled = false; updateExportUI(); }
+});
+
+/* ================================================================ start */
+fillForm();
+setInterval(() => { if (document.hidden || !MODEL) return; tick(); draw(); }, 1000);
+(async () => {
+  try { await Promise.all([300, 400, 700].map(w => document.fonts.load(`${w} 40px "Selawik Local"`))); } catch (e) {}
+  MODEL = build(cfg);
+  applyScenario(true);
+  for (let i = 0; i < 620; i++) tick();
+  draw(); measureLit(); $('busy').hidden = true;
+})();
+window.__builder = { build: () => build(cfg), writePanel, makeZip, get cfg() { return cfg; }, fileName };
+</script>

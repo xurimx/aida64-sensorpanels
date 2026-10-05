@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIDA64 SensorPanels</title>
+<meta name="description" content="OLED-friendly AIDA64 SensorPanel layouts for a 4K second screen, a builder that exports them at any resolution and Windows scale, and a reference of every sensor.">
+<style>
+/* Same black OLED family as the panel pages: pure black, dim structure, colour only where it means something. */
+:root {
+  --bg: #000000;
+  --surface: #0B0C0E;
+  --line: #22262B;
+  --fg: #E9EDF2;
+  --muted: #8A939D;
+  --accent: #3DD9C5;
+  --gpu: #A08CFF;
+  --classic: #F08A3C;
+  --tone: var(--accent);
+  --ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --s-1: .8125rem; --s0: .9375rem; --s1: 1.125rem; --s2: 1.5rem; --s3: 2.6rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: var(--s0); line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 48px 28px 72px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 64px; }
+.wrap > * { min-width: 0; }
+@media (max-width: 560px) { .wrap { padding: 28px 16px 48px; gap: 48px; } }
+h1, h2, h3 { margin: 0; line-height: 1.12; text-wrap: balance; }
+h1 { font-size: var(--s3); font-weight: 300; letter-spacing: -.01em; }
+h2 { font-size: var(--s2); font-weight: 300; }
+p { margin: 0; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .86em; }
+.eyebrow { font-size: var(--s-1); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 14px; }
+header .lead { color: var(--muted); font-size: var(--s1); max-width: 64ch; }
+section { display: grid; gap: 20px; }
+.sub { color: var(--muted); max-width: 68ch; }
+
+/* panel cards */
+.panels { grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 40px; }
+.card { --tone: var(--accent); display: grid; gap: 14px; align-content: start; }
+.card.classic { --tone: var(--classic); }
+.shot { display: block; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; }
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.shot:hover, .shot:focus-visible { border-color: var(--tone); }
+.card .kicker { font-size: var(--s-1); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--tone); }
+.card p { color: var(--muted); max-width: 60ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 4px; }
+.btn { font: inherit; font-weight: 600; text-decoration: none; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--tone); color: var(--tone); }
+.btn.primary { background: var(--tone); color: #000; }
+.btn:hover { filter: brightness(1.12); }
+a:focus-visible, .btn:focus-visible { outline: 2px solid var(--tone, var(--accent)); outline-offset: 3px; }
+
+/* reference row */
+.ref { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px 0; }
+.ref > div { display: grid; gap: 6px; }
+@media (max-width: 640px) { .ref { grid-template-columns: minmax(0, 1fr); } .ref .btn { justify-self: start; } }
+
+/* how-to and notes */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 48px; }
+.two > section { align-content: start; }
+ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 2.2em minmax(0, 1fr); padding: 12px 0; border-bottom: 1px solid var(--line); }
+ol.steps li::before { content: counter(s); color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+dl.notes { margin: 0; display: grid; border-top: 1px solid var(--line); }
+dl.notes div { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+dt { font-weight: 600; }
+dd { margin: 0; color: var(--muted); }
+footer { color: var(--muted); font-size: var(--s-1); display: grid; gap: 6px; max-width: 80ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">AIDA64 · SensorPanel</p>
+    <h1>SensorPanels for a 4K OLED second screen</h1>
+    <p class="lead">Two layouts drawn for OLED: pure black background, dim static markings, and colour only on the live readings. Both are 3840 × 2160, and the builder re-exports Modern Split for any resolution and Windows scale.</p>
+  </header>
+
+  <section class="panels" aria-label="Panels">
+    <article class="card">
+      <a class="shot" href="builder/"><img src="assets/modern-split.webp" width="1600" height="900" alt="Modern Split panel: CPU and GPU rings, frame rate, load history, memory, VRAM and network on the left; every core, power draw, storage and cooling on the right."></a>
+      <p class="kicker">Modern Split · builder</p>
+      <h2>Summary on the left, every detail on the right</h2>
+      <p>CPU and GPU rings, frame rate, load, memory and network on one half. Each P- and E-core with its clock, temperature and thread load, plus power draw, both drives and every fan, on the other. Pick the sensors, colours, resolution and Windows scale, watch the live preview, then export the <code>.sensorpanel</code> file.</p>
+      <div class="actions"><a class="btn primary" href="builder/">Open the builder</a></div>
+    </article>
+
+    <article class="card classic">
+      <a class="shot" href="classic/"><img src="assets/classic-oled.webp" width="1600" height="900" alt="Classic OLED panel: large analog dials for CPU temperature, frame rate and GPU temperature, six small dials for load, power and memory, and linear scales for storage, fans and network."></a>
+      <p class="kicker">Classic OLED · 3840 × 2160</p>
+      <h2>Analog instrument dials</h2>
+      <p>Three large dials for CPU temperature, frame rate and GPU temperature, six smaller ones for load, power and memory, and slim linear scales for drives, fans and network. Each needle moves in fine steps.</p>
+      <div class="actions">
+        <a class="btn primary" href="panels/Classic_OLED_3840x2160.sensorpanel" download>Download .sensorpanel</a>
+        <a class="btn" href="classic/">Live preview</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="ref" aria-labelledby="ref-h">
+    <div>
+      <h2 id="ref-h">Sensor reference</h2>
+      <p class="sub">Every reading AIDA64 can put on a SensorPanel, searchable by name or ID, with the ones Modern Split uses and the ones worth adding marked.</p>
+    </div>
+    <a class="btn" href="sensors/">Browse sensors</a>
+  </section>
+
+  <div class="two">
+    <section aria-labelledby="use-h">
+      <h2 id="use-h">Put a panel on your screen</h2>
+      <ol class="steps">
+        <li><span>Export a file from the builder, or download the Classic OLED file.</span></li>
+        <li><span>In AIDA64, open <b>File › Preferences › Hardware Monitoring › SensorPanel</b> and tick <b>Show SensorPanel</b>.</span></li>
+        <li><span>Right-click the panel, open <b>SensorPanel Manager</b>, choose <b>Import</b> and pick the file.</span></li>
+        <li><span>Drag the panel onto the second screen.</span></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="zero-h">
+      <h2 id="zero-h">If a reading shows 0 or is missing</h2>
+      <dl class="notes">
+        <div><dt>Frame rate</dt><dd>AIDA64 reads FPS from RivaTuner Statistics Server, so RTSS has to be running.</dd></div>
+        <div><dt>Network</dt><dd>AIDA64 numbers virtual adapters too, so your network card may be NIC2 or higher. Set the number under Network in the builder.</dd></div>
+        <div><dt>Memory temperatures</dt><dd>Turn on DIMM thermal sensor support under Preferences › Stability, then restart AIDA64. Pick your populated slots in the builder.</dd></div>
+        <div><dt>Layout looks off with Windows scaling</dt><dd>Above 100 %, AIDA64 enlarges text and positions but not images. Set the same scale in the builder's Display section before exporting.</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <footer>
+    <p>Not affiliated with FinalWire. AIDA64 is a trademark of FinalWire Ltd.</p>
+    <p>Panel text uses Selawik (Microsoft) and Barlow Semi Condensed (The Barlow Project Authors), both under the SIL Open Font License 1.1. Licences are in <code>src/fonts</code>.</p>
+    <p id="src-link" hidden><a href="#">Source on GitHub</a></p>
+  </footer>
+</div>
+
+<script>
+/* On GitHub Pages (user.github.io/repo/), link back to the repository. */
+(function () {
+  var host = location.hostname, m = host.match(/^([^.]+)\.github\.io$/i);
+  if (!m) return;
+  var repo = location.pathname.split('/')[1] || (m[1] + '.github.io');
+  var p = document.getElementById('src-link');
+  p.firstChild.href = 'https://github.com/' + m[1] + '/' + repo;
+  p.hidden = false;
+})();
+</script>

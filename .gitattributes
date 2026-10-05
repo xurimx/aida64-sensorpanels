@@ -1,0 +1,9 @@
+* text=auto
+
+# AIDA64 needs CRLF and cp1252 bytes exactly as written
+*.sensorpanel binary
+
+*.ttf binary
+*.woff2 binary
+*.webp binary
+*.png binary

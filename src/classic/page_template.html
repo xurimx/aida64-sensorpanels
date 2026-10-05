@@ -1,0 +1,280 @@
+<title>Classic OLED SensorPanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&display=swap">
+<style>
+/*__FONTS__*/
+/* Layout: one deliberately black page (the subject is an OLED panel). Full-width live panel first, its controls under it, set-up notes last. */
+:root {
+  --bg: #000000;
+  --surface: #0A0A09;
+  --line: #24221F;
+  --fg: #E6DFCF;
+  --muted: #8F8879;
+  --accent: #F2803A;
+  --red: #C9553F;
+  --display: "Barlow SC Local", "Barlow Semi Condensed", "Bahnschrift", "Arial Narrow", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --s-1: .8125rem; --s0: .9375rem; --s1: 1.125rem; --s2: 1.6rem; --s3: 2.6rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: var(--s0); line-height: 1.55; }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: 28px; padding-block: 36px 72px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; }
+.wrap > * { min-width: 0; }
+@media (max-width: 560px) { .wrap { padding-inline: 16px; padding-block: 24px 48px; gap: 32px; } }
+h1, h2, h3 { font-family: var(--display); font-weight: 500; line-height: 1.08; margin: 0; text-wrap: balance; }
+h1 { font-size: var(--s3); letter-spacing: .04em; text-transform: uppercase; }
+h2 { font-size: var(--s2); letter-spacing: .03em; }
+h3 { font-size: var(--s0); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .86em; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+.eyebrow { font-family: var(--display); font-weight: 600; font-size: var(--s-1); letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 14px; }
+header .lead { font-size: var(--s1); color: var(--muted); max-width: 64ch; }
+
+.stage { position: relative; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #000; }
+.stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between; margin-top: 14px; }
+.toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--display); font-size: var(--s0); letter-spacing: .08em; text-transform: uppercase; user-select: none; }
+.toggle input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.toggle:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; font-family: var(--display); }
+.stat { display: flex; align-items: baseline; gap: 8px; }
+.stat dt { font-size: var(--s-1); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.stat dd { margin: 0; font-size: var(--s1); font-variant-numeric: tabular-nums; }
+.stats { margin: 0; }
+
+.controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 28px 48px; }
+.grp { display: grid; gap: 6px; align-content: start; }
+.grp h3 { padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.row { display: grid; grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) 6rem; gap: 14px; align-items: center; }
+.row label { font-size: var(--s-1); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row input[type=range] { width: 100%; margin: 0; accent-color: var(--accent); height: 22px; }
+.row input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row .val { font-family: var(--display); font-size: var(--s0); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 32px 56px; }
+.notes section { display: grid; gap: 14px; align-content: start; }
+.notes ol, .notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.notes li { padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--muted); max-width: 68ch; }
+.notes li b { color: var(--fg); font-weight: 600; display: block; margin-bottom: 2px; }
+footer { color: var(--muted); font-size: var(--s-1); max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">AIDA64 SensorPanel · 3840 × 2160 · 13″ OLED</p>
+    <h1>Classic OLED</h1>
+    <p class="lead">Analog instrument dials on true black. Fixed markings are kept dim, and only the needles and readings light up brightly. This preview reads the actual <code>.sensorpanel</code> file and draws it the way AIDA64 does, with simulated readings.</p>
+  </header>
+
+  <section aria-label="Panel preview">
+    <div class="stage"><canvas id="cv" aria-label="Rendered SensorPanel at 3840 by 2160"></canvas></div>
+    <div class="bar">
+      <label class="toggle"><input type="checkbox" id="opt-live"> Simulated readings</label>
+      <dl class="stats">
+        <div class="stat"><dt>Lit pixels</dt><dd id="st-lit">–</dd></div>
+        <div class="stat"><dt>Average picture level</dt><dd id="st-apl">–</dd></div>
+        <div class="stat"><dt>Fixed markings</dt><dd id="st-static">–</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section aria-labelledby="ctl-h" style="display:grid;gap:18px">
+    <h2 id="ctl-h">Move the needles</h2>
+    <div class="controls" id="controls"></div>
+  </section>
+
+  <div class="notes">
+    <section>
+      <h2>Before you import</h2>
+      <ol>
+        <li><b>Check the sensors that depend on your PC.</b>Network reads NIC1, storage reads drives C: and D:, and the case fans are Chassis #1 to #3. Change any of these in SensorPanel Manager if your hardware differs.</li>
+        <li><b>CPU temperature reads CPU Package.</b>If it stays at zero on your CPU, switch the dial's items to CPU Diode (<code>TCPUDIO</code>).</li>
+        <li><b>FPS needs RivaTuner Statistics Server.</b>The frame-rate dial reads RTSS, so it sits at 0 unless RTSS is running with your game.</li>
+        <li><b>Each needle is two or three stacked gauges.</b>AIDA64 gauges have only 16 frames, so every dial stacks gauges with overlapping ranges to get 26 or 41 needle positions. To change a dial's sensor, change all of its gauges plus its number. Hidden divider labels group them in the item list.</li>
+        <li><b>Readings use Bahnschrift.</b>It ships with Windows 10 and 11. Scale numbers and labels are drawn into the background, so they look the same on any PC.</li>
+      </ol>
+    </section>
+    <section>
+      <h2>OLED care</h2>
+      <ul>
+        <li><b>True black everywhere.</b>The background is pure #000000, so those pixels stay off. There are no panels, gradients or glows.</li>
+        <li><b>Dim fixed markings, bright moving parts.</b>Ticks, numbers and labels never change, so they're kept at roughly 35–75% brightness. The orange needles and cream readings move, so they spread wear across more pixels.</li>
+        <li><b>Let the screen do pixel shift.</b>AIDA64 doesn't move the panel, so leave the monitor's own pixel shift, screen saver or panel refresh switched on.</li>
+        <li><b>Run it at a modest brightness.</b>On an OLED the dim markings stay readable even at low brightness, and that's where burn-in risk is lowest.</li>
+      </ul>
+    </section>
+  </div>
+  <footer>Preview only: readings are simulated, and Bahnschrift is replaced by Barlow Semi Condensed on machines that don't have it.</footer>
+</div>
+
+<script>
+const DATA = /*__PAYLOAD__*/null;
+const IMAGES = /*__IMAGES__*/null;
+const META = /*__META__*/null;
+const W = DATA.panel.w, H = DATA.panel.h;
+
+const SENSORS = {
+  TCPUPKG:    { g: 'CPU', label: 'Temperature', unit: '°C', min: 20, max: 105, step: 1, val: 58, dec: 0, sigma: .9, theta: .2 },
+  SCPUUTI:    { g: 'CPU', label: 'Load', unit: '%', min: 0, max: 100, step: 1, val: 34, dec: 0, sigma: 5 },
+  PCPUPKG:    { g: 'CPU', label: 'Power', unit: 'W', min: 0, max: 260, step: 1, val: 96, dec: 1, sigma: 6 },
+  SCPUCLK:    { g: 'CPU', label: 'Clock', unit: 'MHz', min: 800, max: 6000, step: 10, val: 5100, dec: 0, sigma: 60 },
+  TGPU1DIO:   { g: 'GPU', label: 'Temperature', unit: '°C', min: 20, max: 105, step: 1, val: 66, dec: 0, sigma: .6, theta: .2 },
+  SGPU1UTI:   { g: 'GPU', label: 'Load', unit: '%', min: 0, max: 100, step: 1, val: 96, dec: 0, sigma: 2.5 },
+  PGPU1:      { g: 'GPU', label: 'Power', unit: 'W', min: 0, max: 520, step: 1, val: 312, dec: 1, sigma: 12 },
+  SGPU1CLK:   { g: 'GPU', label: 'Clock', unit: 'MHz', min: 200, max: 3200, step: 5, val: 2745, dec: 0, sigma: 25 },
+  SRTSSFPS:   { g: 'Frame rate and memory', label: 'Frame rate', unit: 'FPS', min: 0, max: 260, step: 1, val: 118, dec: 0, sigma: 6 },
+  SMEMUTI:    { g: 'Frame rate and memory', label: 'RAM used', unit: '%', min: 0, max: 100, step: 1, val: 47, dec: 0, sigma: .4 },
+  SVMEMUSAGE: { g: 'Frame rate and memory', label: 'VRAM used', unit: '%', min: 0, max: 100, step: 1, val: 58, dec: 0, sigma: .6 },
+  FCPU:       { g: 'Cooling', label: 'CPU fan', unit: 'RPM', min: 0, max: 3300, step: 10, val: 1150, dec: 0, sigma: 15 },
+  FAIOPUMP:   { g: 'Cooling', label: 'Pump', unit: 'RPM', min: 0, max: 4400, step: 10, val: 2600, dec: 0, sigma: 20 },
+  FCHA1:      { g: 'Cooling', label: 'Case 1', unit: 'RPM', min: 0, max: 3300, step: 10, val: 920, dec: 0, sigma: 10 },
+  FCHA2:      { g: 'Cooling', label: 'Case 2', unit: 'RPM', min: 0, max: 3300, step: 10, val: 880, dec: 0, sigma: 10 },
+  FCHA3:      { g: 'Cooling', label: 'Case 3', unit: 'RPM', min: 0, max: 3300, step: 10, val: 900, dec: 0, sigma: 10 },
+  FGPU1:      { g: 'Cooling', label: 'GPU fan', unit: 'RPM', min: 0, max: 3300, step: 10, val: 1450, dec: 0, sigma: 25 },
+  SDRVCUTI:   { g: 'Storage and network', label: 'Drive C:', unit: '%', min: 0, max: 100, step: 1, val: 63, dec: 0, sigma: 0 },
+  SDRVDUTI:   { g: 'Storage and network', label: 'Drive D:', unit: '%', min: 0, max: 100, step: 1, val: 41, dec: 0, sigma: 0 },
+  SNIC1DLRATE:{ g: 'Storage and network', label: 'Download', unit: 'KB/s', min: 0, max: 120000, step: 50, val: 24500, dec: 1, sigma: 7000, theta: .45 },
+  SNIC1ULRATE:{ g: 'Storage and network', label: 'Upload', unit: 'KB/s', min: 0, max: 40000, step: 10, val: 1800, dec: 1, sigma: 500, theta: .45 },
+};
+for (const s of Object.values(SENSORS)) s.mu = s.val;
+
+const tcolor = n => { n = +n; return '#' + [n & 255, (n >> 8) & 255, (n >> 16) & 255].map(v => v.toString(16).padStart(2, '0')).join(''); };
+const stateOf = (v, min, max) => { if (!(max > min)) return 0; const s = Math.floor((v - min) / (max - min) * 15 + 1e-9); return Math.max(0, Math.min(15, s)); };
+const clockStr = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+function fmt(id, v) { if (id === 'STIME') return clockStr(); const s = SENSORS[id]; return s ? v.toFixed(s.dec) : String(Math.round(v)); }
+function fmtShown(id) { const s = SENSORS[id]; return s.val.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ' + s.unit; }
+
+function fontSpec(name, pt, bold) {
+  const px = pt * 96 / 72;
+  const light = /light/i.test(name || '');
+  const fam = /bahnschrift/i.test(name || '') ? '"Bahnschrift", "Barlow SC Local", sans-serif' : '"Barlow SC Local", sans-serif';
+  // Assumed GDI cell for Bahnschrift: 1.0 em ascent + 0.25 em descent (same assumption the file was laid out with)
+  return { css: `${bold ? 700 : (light ? 300 : 400)} ${px}px ${fam}`, px, asc: 1.0 * px, desc: .25 * px };
+}
+
+const ITEMS = DATA.items.map(it => {
+  const o = { ...it, x: +it.ITMX, y: +it.ITMY };
+  if (o.kind === 'GAUGE') { o.min = +o.MINVAL; o.max = +o.MAXVAL; o.frames = o.STAFLS.split('|'); }
+  return o;
+});
+
+const IMG = {};
+function loadImages() {
+  return Promise.all(Object.entries(IMAGES).map(([k, uri]) => new Promise(res => {
+    const im = new Image(); im.onload = res; im.onerror = res; im.src = uri; IMG[k] = im;
+  })));
+}
+
+const cv = document.getElementById('cv');
+cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+
+function drawText(text, f, x, yTop, color, align) {
+  ctx.font = f.css; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, yTop + f.asc);
+}
+
+function draw() {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  for (const it of ITEMS) {
+    if (it.kind === 'IMG') {
+      const im = IMG[it.IMGFIL]; if (im && im.width) ctx.drawImage(im, it.x, it.y);
+    } else if (it.kind === 'GAUGE') {
+      const v = SENSORS[it.sensor]?.val ?? 0;
+      const fr = it.frames[stateOf(v, it.min, it.max)];
+      if (fr && IMG[fr]) ctx.drawImage(IMG[fr], it.x, it.y);
+      if (it.SHWVAL === '1') {
+        const f = fontSpec(it.FNTNAM, +it.TXTSIZ, (it.VALBI || '0')[0] === '1');
+        drawText(fmt(it.sensor, v), f, it.x, it.y - (f.asc + f.desc) / 2, tcolor(it.VALCOL), 'center');
+      }
+    } else if (it.kind === 'SIMPLE') {
+      const bir = it.TXTBIR || '000';
+      const f = fontSpec(it.FNTNAM, +it.TXTSIZ, bir[0] === '1');
+      const v = SENSORS[it.sensor]?.val ?? 0;
+      const text = fmt(it.sensor, v) + (it.SHWUNT === '1' ? it.UNT : '');
+      drawText(text, f, it.x, it.y, tcolor(it.TXTCOL), bir[2] === '1' ? 'right' : 'left');
+    }
+  }
+}
+
+/* ---- OLED stats ---- */
+function measure(source) {
+  const s = document.createElement('canvas'); s.width = W; s.height = H;
+  const c = s.getContext('2d'); c.drawImage(source, 0, 0);
+  const d = c.getImageData(0, 0, W, H).data;
+  let lit = 0, sum = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    if (r > 6 || g > 6 || b > 6) { lit++; sum += .2126 * r + .7152 * g + .0722 * b; }
+  }
+  const n = W * H;
+  return { lit: lit / n * 100, apl: sum / n / 255 * 100 };
+}
+const pct = v => (v < 1 ? v.toFixed(2) : v.toFixed(1)) + ' %';
+let statTick = 0;
+function updateStats() {
+  const m = measure(cv);
+  document.getElementById('st-lit').textContent = pct(m.lit);
+  document.getElementById('st-apl').textContent = pct(m.apl);
+}
+
+/* ---- simulation ---- */
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function tick() {
+  for (const s of Object.values(SENSORS)) {
+    if (!s.sigma) continue;
+    s.val += (s.theta || .3) * (s.mu - s.val) + s.sigma * gauss();
+    s.val = Math.max(s.min, Math.min(s.max, s.val));
+  }
+}
+
+/* ---- controls ---- */
+const ROWS = {};
+const groups = {};
+const controls = document.getElementById('controls');
+for (const [id, s] of Object.entries(SENSORS)) {
+  if (!groups[s.g]) {
+    const g = document.createElement('div'); g.className = 'grp';
+    const h = document.createElement('h3'); h.textContent = s.g; g.append(h);
+    controls.append(g); groups[s.g] = g;
+  }
+  const row = document.createElement('div'); row.className = 'row';
+  const iid = 'sl-' + id;
+  row.innerHTML = `<label for="${iid}" title="${id}">${s.label}</label><input type="range" id="${iid}" min="${s.min}" max="${s.max}" step="${s.step}" value="${s.val}"><span class="val"></span>`;
+  const input = row.querySelector('input');
+  input.addEventListener('input', () => { s.val = s.mu = +input.value; refresh(); });
+  input.addEventListener('pointerdown', () => { input.dataset.drag = '1'; });
+  input.addEventListener('pointerup', () => { delete input.dataset.drag; });
+  groups[s.g].append(row);
+  ROWS[id] = { input, val: row.querySelector('.val') };
+}
+function updateRows() {
+  for (const [id, r] of Object.entries(ROWS)) {
+    r.val.textContent = fmtShown(id);
+    if (!r.input.dataset.drag && document.activeElement !== r.input) r.input.value = SENSORS[id].val;
+  }
+}
+
+function refresh() { draw(); updateRows(); }
+
+const optLive = document.getElementById('opt-live');
+optLive.checked = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+setInterval(() => {
+  if (!optLive.checked || document.hidden) return;
+  tick(); refresh();
+  if (++statTick % 3 === 0) updateStats();
+}, 1000);
+
+(async function start() {
+  updateRows();
+  await loadImages();
+  try { await Promise.all([300, 400].map(w => document.fonts.load(`${w} 40px "Barlow SC Local"`))); } catch (e) {}
+  const bgIm = IMG['background.png'];
+  if (bgIm && bgIm.width) { const m = measure(bgIm); document.getElementById('st-static').textContent = pct(m.lit) + ' lit'; }
+  refresh(); updateStats();
+})();
+</script>

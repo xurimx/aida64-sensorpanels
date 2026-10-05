@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIDA64 Sensor Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: same black OLED family as the panel pages. Picks first, building blocks second, the full searchable list last. */
+:root {
+  --bg: #000000;
+  --surface: #0B0C0E;
+  --field: #111316;
+  --line: #22262B;
+  --fg: #E9EDF2;
+  --muted: #8A939D;
+  --accent: #3DD9C5;
+  --gpu: #A08CFF;
+  --warn: #F2B740;
+  --ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --s-1: .8125rem; --s0: .9375rem; --s1: 1.125rem; --s2: 1.5rem; --s3: 2.4rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: var(--s0); line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 28px; padding-block: 36px 72px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 52px; }
+.wrap > * { min-width: 0; }
+@media (max-width: 560px) { .wrap { padding-inline: 16px; padding-block: 24px 48px; gap: 40px; } }
+h1, h2, h3 { margin: 0; line-height: 1.12; text-wrap: balance; }
+h1 { font-size: var(--s3); font-weight: 300; letter-spacing: -.01em; }
+h2 { font-size: var(--s2); font-weight: 300; }
+h3 { font-size: var(--s0); font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-size: var(--s-1); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 12px; }
+header .lead { color: var(--muted); font-size: var(--s1); max-width: 68ch; }
+section { display: grid; gap: 18px; }
+.sub { color: var(--muted); max-width: 70ch; }
+code, .id { font-family: var(--mono); font-size: .84em; }
+.id { color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+a { color: var(--accent); }
+
+/* picks */
+.picks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 0 40px; border-top: 1px solid var(--line); }
+.picks li { padding: 16px 0; border-bottom: 1px solid var(--line); display: grid; gap: 6px; align-content: start; }
+.picks .ids { display: flex; flex-wrap: wrap; gap: 6px; }
+.picks p { color: var(--muted); }
+.picks .fit { font-size: var(--s-1); color: var(--accent); }
+
+/* building blocks */
+.tbl-wrap { overflow-x: auto; max-width: 100%; border-top: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.blocks td:first-child { font-weight: 600; white-space: nowrap; }
+.blocks td:last-child { color: var(--muted); }
+.blocks { min-width: 640px; }
+
+/* full list */
+.tools { display: grid; gap: 12px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 12px; z-index: 2; border-bottom: 1px solid var(--line); }
+.search { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.search input[type=search] { flex: 1 1 260px; min-width: 0; font: inherit; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+.search input:focus-visible, .chip:focus-visible, .toggle:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggle { display: inline-flex; gap: 8px; align-items: center; font-size: var(--s-1); color: var(--muted); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--accent); margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: var(--s-1); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.chip[aria-pressed="true"] { color: var(--fg); background: #15181B; border-color: #343A40; }
+.chip span { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+#count { font-size: var(--s-1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.cat { display: grid; gap: 4px; }
+.cat h3 { font-size: var(--s-1); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding-top: 18px; }
+.list { min-width: 560px; }
+.list td.idc { width: 32%; }
+.list td.nm { color: var(--fg); }
+.tags { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: 8px; vertical-align: 1px; }
+.tag { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: 999px; padding: 0 8px; line-height: 18px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.on { color: var(--accent); }
+.tag.pick { color: var(--warn); }
+.tag.grp { color: var(--muted); }
+.note { display: block; color: var(--muted); font-size: var(--s-1); margin-top: 2px; }
+.empty { color: var(--muted); padding: 24px 0; }
+footer { color: var(--muted); font-size: var(--s-1); max-width: 76ch; display: grid; gap: 6px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">AIDA64 · SensorPanel</p>
+    <h1>AIDA64 Sensor Reference</h1>
+    <p class="lead">Every reading AIDA64 can put on a SensorPanel, grouped the way its manual lists them. Your PC only reports the ones its hardware has. SensorPanel Manager's sensor dropdown shows exactly which ones those are.</p>
+  </header>
+
+  <section aria-labelledby="picks-h">
+    <h2 id="picks-h">Worth adding to Modern Split</h2>
+    <p class="sub">Picked for your setup: an Intel 6P + 8E CPU, a graphics card, two drives, an AIO and gaming on a second screen. Readings already on the panel aren't repeated here.</p>
+    <ul class="picks" id="picks"></ul>
+  </section>
+
+  <section aria-labelledby="blocks-h">
+    <h2 id="blocks-h">Panel building blocks</h2>
+    <p class="sub">These are the item types in SensorPanel Manager. A reading from the list below goes into one of them.</p>
+    <div class="tbl-wrap">
+      <table class="blocks">
+        <thead><tr><th>Item</th><th>What it does</th><th>Where Modern Split uses it</th></tr></thead>
+        <tbody>
+          <tr><td>Label</td><td>Fixed text with font, colour and style.</td><td>Not used. Labels are drawn into the background so they look the same on any PC.</td></tr>
+          <tr><td>Image</td><td>A picture, optionally a link that opens a URL or program when double-clicked.</td><td>The background.</td></tr>
+          <tr><td>Simple sensor item</td><td>One reading as text, with optional label and unit.</td><td>Clocks, temperatures, MB used, read/write speeds, fan RPM.</td></tr>
+          <tr><td>Sensor item</td><td>Label, value, unit and an optional bar in one item.</td><td>Not used. The bars are custom gauges instead, for the segmented look.</td></tr>
+          <tr><td>Graph</td><td>History of one reading as a line or area graph, with optional grid and auto-scaling.</td><td>FPS, CPU and GPU load, network.</td></tr>
+          <tr><td>Gauge</td><td>Built-in dial skins, or a custom gauge that flips between 16 of your own images.</td><td>Every ring and segmented bar, plus the big centred numbers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="all-h">
+    <div style="display:grid;gap:8px">
+      <h2 id="all-h">Every sensor</h2>
+      <p class="sub">Rows ending in a range, like <code>SDSK1ACT–SDSK25ACT</code>, repeat once per device. GPU2 to GPU12 repeat the GPU1 rows with their own number.</p>
+    </div>
+    <div class="tools">
+      <div class="search">
+        <input type="search" id="q" placeholder="Search by name or ID, e.g. hotspot, VRM, TDIMM" aria-label="Search sensors">
+        <label class="toggle"><input type="checkbox" id="f-on"> On my panel</label>
+        <label class="toggle"><input type="checkbox" id="f-pick"> Worth adding</label>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Category"></div>
+      <span id="count" role="status" aria-live="polite"></span>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <footer>
+    <p>Source: AIDA64's <a href="https://www.aida64.com/user-manual/hardware-monitoring/external-applications/complete-sensor-value-list" target="_blank" rel="noopener">Complete Sensor value list</a>. The voltage, current and power sections are condensed here. Rail groups you'd rarely put on a panel are shown as one row, marked "group".</p>
+    <p>The manual writes core IDs with two digits (<code>SCC-1-01</code>). Panels saved by AIDA64 use <code>SCC-1-1</code>, which is the form Modern Split uses.</p>
+  </footer>
+</div>
+
+<script>
+/* [id, name, note?, flags?]  flags: g = condensed group */
+const CATS = [
+  ['System', [
+    ['SDATE', 'Date'], ['STIME', 'Time'], ['STIMENS', 'Time (HH:MM)'], ['SUPTIME', 'UpTime'], ['SUPTIMENS', 'UpTime (HH:MM)'],
+    ['SCPUCLK', 'CPU Clock'], ['SCC-1-1–SCC-1-128', 'CPU #1 core clocks', 'One per core'], ['SCC-2-1–SCC-2-128', 'CPU #2 core clocks', 'Dual-socket systems'],
+    ['SCPUMUL', 'CPU Multiplier'], ['SCPUFSB', 'CPU FSB'], ['SHTMUL', 'HyperTransport Multiplier'], ['SHTCLK', 'HyperTransport Clock'],
+    ['SNBMUL', 'North Bridge Multiplier'], ['SNBCLK', 'North Bridge Clock'], ['SSAMUL', 'System Agent Multiplier'], ['SSACLK', 'System Agent Clock'],
+    ['SMEMCLK', 'Memory Clock'], ['SMEMSPEED', 'Memory Speed'], ['SDRAMFSB', 'DRAM:FSB Ratio'], ['SMEMTIM', 'Memory Timings'],
+    ['SMOBONAME', 'Motherboard Name'], ['SBIOSVER', 'BIOS Version'],
+    ['SCPUUTI', 'CPU Utilization'], ['SCPU1UTI–SCPU128UTI', 'Per-thread utilization', 'One per logical CPU'], ['SCPUTHR', 'CPU Throttling'],
+    ['SMEMUTI', 'Memory Utilization'], ['SUSEDMEM', 'Used Memory'], ['SFREEMEM', 'Free Memory'], ['SPROCESSES', 'Processes'], ['SUSERS', 'Users'],
+    ['SDRVAUTI–SDRVZUTI', 'Drive A:–Z: Utilization', 'Percent of space used'], ['SDRVAUSEDSPC–SDRVZUSEDSPC', 'Drive A:–Z: Used Space'], ['SDRVAFREESPC–SDRVZFREESPC', 'Drive A:–Z: Free Space'],
+    ['SSMASTA', 'SMART Status'], ['SDSK1ACT–SDSK25ACT', 'Disk 1–25 Activity'], ['SDSK1READSPD–SDSK25READSPD', 'Disk 1–25 Read Speed'], ['SDSK1WRITESPD–SDSK25WRITESPD', 'Disk 1–25 Write Speed'],
+    ['SGPU1CLK', 'GPU1 Clock'], ['SGPU1SHDCLK', 'GPU1 Shader Clock'], ['SGPU1MEMCLK', 'GPU1 Memory Clock'], ['SGPU1UTI', 'GPU1 Utilization'],
+    ['SGPU1MCUTI', 'GPU1 MC Utilization', 'Memory controller load'], ['SGPU1VEUTI', 'GPU1 VE Utilization', 'Video engine load'], ['SGPU1BIUTI', 'GPU1 BI Utilization', 'Bus interface load'],
+    ['SGPU1USEDDEMEM', 'GPU1 Used Dedicated Memory'], ['SGPU1USEDDYMEM', 'GPU1 Used Dynamic Memory'], ['SGPU1BUSTYP', 'GPU1 Bus Type'],
+    ['SGPU1PWRCTRL', 'GPU1 PowerControl'], ['SGPU1PERFCAP', 'GPU1 PerfCap Reason'],
+    ['SVMEMUSAGE', 'Video Memory Utilization'], ['SUSEDVMEM', 'Used Video Memory'], ['SUSEDLVMEM', 'Used Local Video Memory'], ['SUSEDNLVMEM', 'Used Non-Local Video Memory'],
+    ['SFREEVMEM', 'Free Video Memory'], ['SFREELVMEM', 'Free Local Video Memory'], ['SFREENLVMEM', 'Free Non-Local Video Memory'],
+    ['SPRIIPADDR', 'Primary IP Address'], ['SEXTIPADDR', 'External IP Address', 'Keep it off a panel you screenshot or stream'],
+    ['SNIC1DLRATE–SNIC8DLRATE', 'NIC1–NIC8 Download Rate'], ['SNIC1ULRATE–SNIC8ULRATE', 'NIC1–NIC8 Upload Rate'], ['SNIC1TOTDL–SNIC8TOTDL', 'NIC1–NIC8 Total Download'],
+    ['SNIC1TOTUL–SNIC8TOTUL', 'NIC1–NIC8 Total Upload'], ['SNIC1CONNSPD–SNIC8CONNSPD', 'NIC1–NIC8 Connection Speed'], ['SNIC1WLANRSSI–SNIC8WLANRSSI', 'NIC1–NIC8 WLAN Signal Strength'],
+    ['SDESKRES', 'Desktop Resolution'], ['SVREFRATE', 'Vertical Refresh Rate'], ['SDISPBRILVL', 'Display Brightness Level'], ['SMASTVOL', 'Master Volume'],
+    ['SMEDTIT', 'Media Title'], ['SMEDSTA', 'Media Status'], ['SMEDPOS', 'Media Position'],
+    ['SBATTLVL', 'Battery Level'], ['SBATTWEARLVL', 'Battery Wear Level'], ['SBATT', 'Battery'], ['SESTBATTTIME', 'Estimated Battery Time'], ['SPWRSTATE', 'Power State'], ['SBATTPWRLOADPERC', 'Battery Power Load'],
+    ['SFRAPS', 'Fraps'], ['SRTSSFPS', 'RTSS FPS'],
+    ['SJDDLRATE', 'JD Download Rate', 'JDownloader'], ['SJDTOTDL', 'JD Total Download'], ['SJDREMDL', 'JD Remaining Download'], ['SJDETA', 'JD ETA'],
+    ['SREGVALS1–SREGVALS10', 'Registry Value Str1–Str10', 'Text you write to HKCU\\Software\\FinalWire\\AIDA64\\ImportValues'], ['SREGVALD1–SREGVALD10', 'Registry Value DW1–DW10', 'Numbers from the same key'],
+  ]],
+  ['Temperatures', [
+    ['TMOBO', 'Motherboard'], ['TCPU', 'CPU'], ['TCPU1–TCPU4', 'CPU1–CPU4'], ['TCPUDIO', 'CPU Diode'], ['TCPUSOCK', 'CPU Socket'], ['TCPUPKG', 'CPU Package'],
+    ['TCPU1PKG–TCPU4PKG', 'CPU1–CPU4 Package'], ['TCPUIAC', 'CPU IA Cores'], ['TCPUGTC', 'CPU GT Cores'], ['TCPUISP', 'CPU ISP'], ['TCPUSA', 'CPU System Agent'], ['TCPUTCTL', 'CPU Tctl', 'AMD'],
+    ['TCC-1-1–TCC-1-128', 'CPU #1 core temperatures'], ['TCC-2-1–TCC-2-128', 'CPU #2 core temperatures'], ['TCCD1–TCCD12', 'CCD #1–#12', 'AMD chiplets'],
+    ['TPPGACPU', 'PPGA CPU'], ['TS1CPU', 'Slot1 CPU'], ['TDIMM', 'DIMM'], ['TDIMM1–TDIMM4', 'DIMM1–DIMM4'], ['TDIMMTS1–TDIMMTS64', '1st–64th DIMM', 'DDR5 sticks report these'], ['TAMB1–TAMB32', '1st–32nd FB-DIMM'],
+    ['TAGP', 'AGP'], ['TMPCI', 'MiniPCI'], ['TPCMCIA', 'PCMCIA'], ['TPCIE', 'PCI-E'], ['TPCIE1–TPCIE5', 'PCI-E #1–#5'],
+    ['TUSB30', 'USB 3.0'], ['TUSB301–TUSB302', 'USB 3.0 #1–#2'], ['TUSB31', 'USB 3.1'], ['TSATA6G', 'SATA 6G'], ['TM2', 'M.2'], ['TM21–TM24', 'M.2 #1–#4', 'Motherboard M.2 slot sensors'], ['TMXM', 'MXM'],
+    ['TSOC', 'SoC'], ['TVSOC', 'VSoC'], ['TCHIP', 'Chipset'], ['TNB', 'North Bridge'], ['TSB', 'South Bridge'], ['TPCH', 'PCH'], ['TPCHCORE', 'PCH Core'], ['TPCHDIO', 'PCH Diode'],
+    ['TIMC', 'IMC'], ['TMCP', 'MCP'], ['TGMCH', 'GMCH'], ['TGMCH1–TGMCH2', 'GMCH1–GMCH2'], ['TPXH', 'PXH'], ['TPLX', 'PLX'],
+    ['TPSU', 'Power Supply'], ['TPSU1–TPSU3', 'Power Supply #1–#3'], ['TAPS', 'APS'], ['TODD', 'Optical Drive'], ['TWLAN', 'WLAN'], ['TLCD', 'LCD'], ['TIGPU', 'iGPU'],
+    ['TRAIDCTR', 'RAID Controller'], ['TRAIDCTR1–TRAIDCTR4', 'RAID Controller #1–#4'],
+    ['TWATER', 'Water', 'Coolant temperature'], ['TWATER2–TWATER4', 'Water #2–#4'], ['TWATERIN', 'Water In'], ['TWATERIN2', 'Water In #2'], ['TWATEROUT', 'Water Out'], ['TWATEROUT2', 'Water Out #2'],
+    ['TBATT', 'Battery'], ['TBATT2', 'Battery #2'], ['TPWM', 'PWM'], ['TPWM1–TPWM5', 'PWM1–PWM5'], ['TVRM', 'VRM'], ['TVRM1–TVRM3', 'VRM1–VRM3'], ['TMOS', 'MOS'], ['TMOS1–TMOS2', 'MOS1–MOS2'],
+    ['TAUX', 'Aux'], ['TFRONT', 'Front'], ['TREAR', 'Rear'], ['TVCCIO', 'VCCIO'], ['TVCCSA', 'VCCSA'], ['TOPT1–TOPT3', 'OPT1–OPT3'], ['TSZS1–TSZS2', 'Subzero Sense #1–#2'], ['TEC1–TEC2', 'EC1–EC2'],
+    ['TTSENSOR', 'T_Sensor', 'Motherboard thermistor header'], ['TTSENSOR1–TTSENSOR3', 'T_Sensor #1–#3'], ['TEXT1–TEXT3', 'Ext #1–#3'], ['TATX6P', 'ATX 6P'], ['TFAN1VRM–TFAN4VRM', 'Fan #1–#4 VRM'], ['TTEMP1–TTEMP99', 'Temperature #1–#99'],
+    ['TGPU1', 'GPU1'], ['TGPU1GPU2', 'GPU1 #2'], ['TGPU1DIO', 'GPU1 Diode'], ['TGPU1DIOD', 'GPU1 Diode (DispIO)'], ['TGPU1DIOM', 'GPU1 Diode (MemIO)'], ['TGPU1DIOS', 'GPU1 Diode (Shader)'],
+    ['TGPU1AMB', 'GPU1 Ambient'], ['TGPU1SOC', 'GPU1 SoC'], ['TGPU1HOT', 'GPU1 Hotspot'], ['TGPU1MEM', 'GPU1 Memory'], ['TGPU1MEM1–TGPU1MEM3', 'GPU1 Memory #1–#3'],
+    ['TGPU1VRM', 'GPU1 VRM'], ['TGPU1VRM1–TGPU1VRM2', 'GPU1 VRM1–VRM2'], ['TGPU1PWM1–TGPU1PWM5', 'GPU1 PWM1–PWM5'],
+    ['THDD1–THDD50', '1st–50th HDD', 'Also covers SSDs and NVMe'], ['THDD1TS2–THDD50TS2', '1st–50th HDD #2', 'Second sensor on drives that have one'],
+  ]],
+  ['Fans', [
+    ['FCPU', 'CPU'], ['FCPU1–FCPU4', 'CPU1–CPU4'], ['FCPUOPT', 'CPU OPT'], ['FSYS', 'System'], ['FCHIP', 'Chipset'], ['FNB', 'North Bridge'], ['FSB', 'South Bridge'], ['FPCH', 'PCH'], ['FNFORCE', 'nForce'],
+    ['FCHA', 'Chassis'], ['FCHA1–FCHA9', 'Chassis #1–#9'], ['FPSU', 'Power Supply'], ['FFRONT', 'Front'], ['FFRONT1–FFRONT5', 'Front #1–#5'], ['FREAR', 'Rear'], ['FREAR1–FREAR2', 'Rear #1–#2'],
+    ['FOTES', 'OTES'], ['FOTES1–FOTES2', 'OTES1–OTES2'], ['FDIMM', 'DIMM'], ['FFBD', 'FBD'], ['FFBD1–FFBD2', 'FBD1–FBD2'], ['FM2', 'M.2'], ['FCOVER', 'Cover'], ['FHS', 'HS'], ['FHS1–FHS2', 'HS1–HS2'],
+    ['FHDD', 'HDD'], ['FODD', 'ODD'], ['FMXM', 'MXM'], ['FPWM', 'PWM'], ['FVRM', 'VRM'], ['FMOS', 'MOS'], ['FMOS1–FMOS2', 'MOS1–MOS2'], ['FHAMP', 'HAMP'],
+    ['FASSIST', 'Assistant'], ['FASSIST1–FASSIST3', 'Assistant #1–#3'], ['FAUX', 'Aux'], ['FAUX1–FAUX5', 'Aux1–Aux5'], ['FOPT1–FOPT5', 'OPT1–OPT5'], ['FFAN1–FFAN40', 'Fan #1–#40'],
+    ['FWPUMP', 'Water Pump'], ['FWPUMP1–FWPUMP2', 'Water Pump #1–#2'], ['FWFLOW', 'Water Flow'], ['FWFLOW2', 'Water Flow #2'], ['FAIOPUMP', 'AIO Pump'], ['FPUMP1–FPUMP8', 'Pump #1–#8'],
+    ['FGPU1–FGPU12', 'GPU1–GPU12'], ['FGPU1GPU2…', 'Extra fans per GPU', 'Cards with two or three fan channels', 'g'],
+  ]],
+  ['Fan duty', [
+    ['DCPU', 'CPU', 'Fan speed in %'], ['DSYS', 'System'], ['DTBAL1–DTBAL4', 'T-Balancer #1–#4'], ['DGPU1–DGPU12', 'GPU1–GPU12'], ['DGPU1GPU2…', 'Extra fans per GPU', '', 'g'],
+  ]],
+  ['Voltage', [
+    ['VCPU', 'CPU Core'], ['VCPU1–VCPU4', 'CPU1–CPU4 Core'], ['VCPUVID', 'CPU VID', 'Voltage the CPU asks for'], ['VCPUVRM…', 'CPU VRM rails', '', 'g'], ['VCPUAUX', 'CPU Aux'], ['VCPUVDDA', 'CPU VDDA'],
+    ['V09V–V26V', 'Fixed rails +0.9 V to +2.6 V', '', 'g'], ['V33V', '+3.3 V'], ['VP5V', '+5 V'], ['VP5VBACK', '+5 V Backup'], ['VM5V', '−5 V'],
+    ['VP12V', '+12 V', 'From the motherboard sensor'], ['VP12V1–VP12V5', '+12 V #1–#5'], ['VM12V', '−12 V'], ['V3VSB / V5VSB', 'Standby rails', '', 'g'], ['VBAT', 'VBAT Battery'],
+    ['VDIMM', 'DIMM'], ['VDIMMAB / CD / EF / GH', 'DIMM channel pairs'], ['VDDRVPP…', 'DDR VPP rails', '', 'g'], ['VVCCIO', 'VCCIO'], ['VVCCIO2', 'VCCIO2'], ['VVCCSA', 'VCCSA'],
+    ['VCPUNB… / VPCH… / VSB…', 'Chipset and PCH rails', '', 'g'], ['VFAN21–VFAN32', 'Fan voltages', '', 'g'], ['VPUMP1–VPUMP2', 'Pump voltages'],
+    ['VGPU1', 'GPU1 Core'], ['VGPU1VCC', 'GPU1 Vcc'], ['VGPU1MEM', 'GPU1 Memory'], ['VGPU1MEMCORE', 'GPU1 Memory Core'], ['VGPU1MEMIO', 'GPU1 Memory I/O'], ['VGPU1SOC', 'GPU1 SoC'], ['VGPU1VRM', 'GPU1 VRM'],
+    ['VGPU1P12V', 'GPU1 +12V'], ['VGPU1PCIE', 'GPU1 PCIe'], ['VGPU16P / 16P1 / 16P2', 'GPU1 6-pin'], ['VGPU18P / 18P1–18P3', 'GPU1 8-pin'], ['VGPU112VHPWR', 'GPU1 12VHPWR'],
+  ]],
+  ['Current', [
+    ['CCPU', 'CPU'], ['CCPU1–CCPU4', 'CPU1–CPU4'], ['CCPUVDD…', 'CPU rail currents', '', 'g'], ['CVCCIO / CVCCSA', 'I/O and System Agent'], ['C15V–C33V', 'Fixed rail currents', '', 'g'],
+    ['CP12V', '+12 V'], ['CP12V1–CP12V5', '+12 V #1–#5'], ['CDIMM… / CPCH', 'Memory and chipset', '', 'g'], ['CFAN21–CFAN32', 'Fan currents', '', 'g'], ['CPUMP1–CPUMP2', 'Pump currents'], ['CPSU…', 'Power supply and battery', '', 'g'],
+    ['CGPU1MEM', 'GPU1 Memory'], ['CGPU1SOC', 'GPU1 SoC'], ['CGPU1VRM', 'GPU1 VRM'], ['CGPU1PCIE', 'GPU1 PCIe'], ['CGPU16P / 16P1 / 16P2', 'GPU1 6-pin'], ['CGPU18P / 18P1–18P3', 'GPU1 8-pin'], ['CGPU112VHPWR', 'GPU1 12VHPWR'],
+  ]],
+  ['Power', [
+    ['PCPU', 'CPU'], ['PCPU1–PCPU2', 'CPU1–CPU2'], ['PCPUPKG', 'CPU Package'], ['PCPUIAC', 'CPU IA Cores'], ['PCPUGTC', 'CPU GT Cores', 'Integrated graphics'], ['PCPUCU0–PCPUCU1', 'CPU CU0–CU1'], ['PCPUUNC', 'CPU Uncore'],
+    ['PCPUVDD', 'CPU VDD'], ['PCPUVDDNB', 'CPU VDDNB'], ['P15V', '+1.5 V'], ['P33V', '+3.3 V'], ['PP5V', '+5 V'], ['PP12V', '+12 V'], ['PP12V1–PP12V5', '+12 V #1–#5'],
+    ['PDIMM', 'DIMM'], ['PIGPU', 'iGPU'], ['PFAN21–PFAN32', 'Fan power', '', 'g'], ['PPUMP1–PPUMP2', 'Pump power'], ['PPWR1–PPWR4', 'Power #1–#4'],
+    ['PPSU', 'Power Supply', 'Digital PSUs only'], ['PBATT', 'Battery'], ['PBATTOUTP', 'Battery Output'], ['PBATTCHR', 'Battery Charge Rate'], ['PBATT2 / PBATT2OUTP / PBATT2CHR', 'Battery #2'],
+    ['PGPU1', 'GPU1'], ['PGPU1TDPP', 'GPU1 TDP%'], ['PGPU1MEM', 'GPU1 Memory'], ['PGPU1SOC', 'GPU1 SoC'], ['PGPU1VRM', 'GPU1 VRM'], ['PGPU1PCIE', 'GPU1 PCIe', 'Power drawn through the slot'],
+    ['PGPU16P / 16P1 / 16P2', 'GPU1 6-pin'], ['PGPU18P / 18P1–18P3', 'GPU1 8-pin'], ['PGPU112VHPWR', 'GPU1 12VHPWR'],
+  ]],
+  ['Flow & liquid', [
+    ['WFLOW1–WFLOW20', 'Flow #1–#20', 'Custom loop flow meters'], ['LLIQ1–LLIQ4', 'Liquid #1–#4', 'Reservoir level sensors'],
+  ]],
+];
+
+/* already on Modern Split (defaults: NIC6, disks 1–2 / C: D:, six fans) */
+const ON = {
+  STIME: 1, SDATE: 1, SUPTIME: 1, SCPUCLK: 1, 'SCC-1-1–SCC-1-128': 'Cores 1–14', SCPUUTI: 1, 'SCPU1UTI–SCPU128UTI': 'Threads 1–20', SMEMUTI: 1, SUSEDMEM: 1, SFREEMEM: 1,
+  'SDRVAUTI–SDRVZUTI': 'C: and D:', 'SDSK1ACT–SDSK25ACT': 'Disks 1–2', 'SDSK1READSPD–SDSK25READSPD': 'Disks 1–2', 'SDSK1WRITESPD–SDSK25WRITESPD': 'Disks 1–2',
+  SGPU1CLK: 1, SGPU1UTI: 1, SVMEMUSAGE: 1, SUSEDVMEM: 1, SFREEVMEM: 1, 'SNIC1DLRATE–SNIC8DLRATE': 'NIC6', 'SNIC1ULRATE–SNIC8ULRATE': 'NIC6', SRTSSFPS: 1,
+  TCPUPKG: 1, 'TCC-1-1–TCC-1-128': 'Cores 1–14', TGPU1DIO: 1, TGPU1HOT: 1, 'THDD1–THDD50': 'Disks 1–2',
+  FCPU: 1, 'FCHA1–FCHA9': 'Chassis #1–#3', FAIOPUMP: 1, 'FGPU1–FGPU12': 'GPU1', VCPU: 1, PCPUPKG: 1, PCPUIAC: 1, PGPU1: 1, PGPU1TDPP: 1,
+};
+
+/* worth adding: [title, ids[], why, fits] */
+const PICKS = [
+  ['CPU throttling', ['SCPUTHR'], 'Shows when the CPU pulls its clocks back for heat or power limits. It explains a sudden FPS dip next to a hot package temperature.', 'A small readout under the CPU ring'],
+  ['GPU limit reason', ['SGPU1PERFCAP'], 'NVIDIA cards report why boost stopped climbing: power, thermal, voltage or low load. It tells you which limit you are hitting while gaming.', 'Text next to the GPU clock'],
+  ['VRAM temperature and clock', ['TGPU1MEM', 'SGPU1MEMCLK'], 'Graphics memory often runs hotter than the core, especially GDDR6X. The memory clock also shows when the card drops to idle speeds.', 'Under the GPU ring, or a GPU row on the detail side'],
+  ['12VHPWR connector', ['PGPU112VHPWR', 'VGPU112VHPWR'], 'On cards with the 16-pin connector, power and voltage at the plug. A voltage that sags under load is an early sign of a poor connection.', 'Power draw section'],
+  ['Coolant temperature', ['TWATER'], 'If your AIO reports liquid temperature, it says more about cooling headroom than pump RPM. It only shows up if the cooler exposes it.', 'Cooling row, before the fans'],
+  ['Memory stick temperatures', ['TDIMMTS1', 'TDIMMTS2'], 'DDR5 modules have temperature sensors. Useful with XMP/EXPO profiles and in cases with little airflow.', 'Memory tile'],
+  ['Motherboard VRM and chipset', ['TVRM', 'TPCH', 'TMOBO'], 'VRM temperature matters during long all-core loads like rendering, which the Rendering preview simulates.', 'Detail side, with power draw'],
+  ['Now playing', ['SMEDTIT', 'SMEDSTA', 'SMEDPOS'], 'Title, play state and position of what is playing, from the media players AIDA64 supports. Check yours shows up before designing around it.', 'Header, in place of the title'],
+  ['Refresh rate', ['SVREFRATE'], 'Confirms the game is running at your monitor\'s full refresh rate. Handy next to FPS.', 'Frame-rate tile'],
+  ['Network totals and link speed', ['SNIC6TOTDL', 'SNIC6TOTUL', 'SNIC6CONNSPD'], 'Data moved this session, plus whether the adapter negotiated 1 Gb/s, 2.5 Gb/s or more.', 'Network tile'],
+  ['Your own values', ['SREGVALS1–10', 'SREGVALD1–10'], 'Anything a script writes to HKCU\\Software\\FinalWire\\AIDA64\\ImportValues as Str1–Str10 or DW1–DW10 appears as a sensor. A small script could put build status, weather or calendar items on the panel.', 'Anywhere'],
+];
+const PICK_IDS = new Set(['SCPUTHR', 'SGPU1PERFCAP', 'TGPU1MEM', 'SGPU1MEMCLK', 'PGPU112VHPWR', 'VGPU112VHPWR', 'TWATER', 'TDIMMTS1–TDIMMTS64', 'TVRM', 'TPCH', 'TMOBO',
+  'SMEDTIT', 'SMEDSTA', 'SMEDPOS', 'SVREFRATE', 'SNIC1TOTDL–SNIC8TOTDL', 'SNIC1TOTUL–SNIC8TOTUL', 'SNIC1CONNSPD–SNIC8CONNSPD', 'SREGVALS1–SREGVALS10', 'SREGVALD1–SREGVALD10']);
+
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+/* picks */
+const picksEl = document.getElementById('picks');
+for (const [title, ids, why, fit] of PICKS) {
+  const li = el('li');
+  li.append(el('h3', '', title));
+  const idw = el('div', 'ids'); ids.forEach(i => idw.append(el('span', 'id', i))); li.append(idw);
+  li.append(el('p', '', why));
+  li.append(el('span', 'fit', 'Fits: ' + fit));
+  picksEl.append(li);
+}
+
+/* list */
+const ALL = CATS.flatMap(([cat, rows]) => rows.map(([id, name, note = '', fl = '']) => ({ cat, id, name, note, grp: fl.includes('g'), on: ON[id], pick: PICK_IDS.has(id) })));
+let activeCat = 'All';
+const chips = document.getElementById('chips');
+function chip(name, n) {
+  const b = el('button', 'chip'); b.type = 'button'; b.dataset.cat = name; b.setAttribute('aria-pressed', String(name === activeCat));
+  b.append(document.createTextNode(name)); b.append(el('span', '', n));
+  b.addEventListener('click', () => { activeCat = name; try { localStorage.setItem('aida-ref-cat', name); } catch (e) {} render(); });
+  chips.append(b);
+}
+try { const c = localStorage.getItem('aida-ref-cat'); if (c && (c === 'All' || CATS.some(x => x[0] === c))) activeCat = c; } catch (e) {}
+chip('All', ALL.length); CATS.forEach(([c, rows]) => chip(c, rows.length));
+
+const q = document.getElementById('q'), fOn = document.getElementById('f-on'), fPick = document.getElementById('f-pick');
+[q, fOn, fPick].forEach(i => i.addEventListener('input', render));
+function render() {
+  chips.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === activeCat)));
+  const term = q.value.trim().toLowerCase();
+  const rows = ALL.filter(r => (activeCat === 'All' || r.cat === activeCat) && (!fOn.checked || r.on) && (!fPick.checked || r.pick)
+    && (!term || (r.id + ' ' + r.name + ' ' + r.note).toLowerCase().includes(term)));
+  document.getElementById('count').textContent = `Showing ${rows.length} of ${ALL.length} rows`;
+  const list = document.getElementById('list'); list.replaceChildren();
+  if (!rows.length) { list.append(el('p', 'empty', 'Nothing matches. Try part of a name, like "hot" or "pump", or clear the filters.')); return; }
+  for (const [cat] of CATS) {
+    const rs = rows.filter(r => r.cat === cat); if (!rs.length) continue;
+    const box = el('div', 'cat'); box.append(el('h3', '', cat));
+    const wrap = el('div', 'tbl-wrap'), t = el('table', 'list'), tb = el('tbody');
+    for (const r of rs) {
+      const tr = el('tr'), a = el('td', 'idc'), b = el('td', 'nm');
+      a.append(el('span', 'id', r.id));
+      b.append(document.createTextNode(r.name));
+      const tags = el('span', 'tags');
+      if (r.on) tags.append(el('span', 'tag on', r.on === 1 ? 'On panel' : 'On panel · ' + r.on));
+      if (r.pick) tags.append(el('span', 'tag pick', 'Worth adding'));
+      if (r.grp) tags.append(el('span', 'tag grp', 'Group'));
+      if (tags.childNodes.length) b.append(tags);
+      if (r.note) b.append(el('span', 'note', r.note));
+      tr.append(a, b); tb.append(tr);
+    }
+    t.append(tb); wrap.append(t); box.append(wrap); list.append(box);
+  }
+}
+render();
+</script>

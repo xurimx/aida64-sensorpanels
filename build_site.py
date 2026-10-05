@@ -13,6 +13,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
+sys.path.insert(0, SRC)
+from buildlib import expand_scripts  # noqa: E402
 # The source pages are fragments (title, styles, body content). A standalone page needs a doctype and charset.
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n')
@@ -24,7 +26,7 @@ def run(script):
 
 
 def page(src, dest):
-    html = open(src, encoding='utf-8').read()
+    html = expand_scripts(open(src, encoding='utf-8').read(), os.path.dirname(src))  # <!--@scripts …--> markers
     if not html.lstrip().lower().startswith('<!doctype'):
         html = HEAD + html
     path = os.path.join(ROOT, dest)

@@ -244,6 +244,7 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: .86em; backgro
   </section>
 </div>
 
+<!--@scripts ../shared/sp-core.js ../shared/sp-zip.js ../shared/sp-writer.js-->
 <script>
 /* ================================================================ constants */
 const W = 3840, H = 2160;
@@ -251,7 +252,6 @@ const C = { HI: [233, 237, 242], TITLE: [178, 186, 196], MID: [128, 137, 147], L
             TRACK: [24, 27, 31], NEU: [166, 178, 192], AMBER: [242, 183, 64], RED: [255, 93, 82], FPS: [207, 214, 222] };
 const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
 const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-const bgr = c => c[0] + (c[1] << 8) + (c[2] << 16);
 const ASC = 2210 / 2048, DESC = 514 / 2048;   // Segoe UI GDI cell
 const FAM = '"Selawik Local", "Segoe UI", sans-serif';
 const WGT = { light: 300, reg: 400, bold: 700 };
@@ -671,57 +671,8 @@ function measureLit() {
   document.getElementById('st-lit').textContent = (lit / (cv.width * cv.height) * 100).toFixed(1) + ' %';
 }
 
-/* ================================================================ .sensorpanel writer */
-const fmtNum = v => { const s = Number(v).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''); return s === '-0' || s === '' ? '0' : s; };
-const HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0').toUpperCase());
-function toHex(u8) { const parts = []; for (let i = 0; i < u8.length; i += 32768) { let s = ''; const e = Math.min(u8.length, i + 32768); for (let j = i; j < e; j++) s += HEX[u8[j]]; parts.push(s); } return parts.join(''); }
-const pngBytes = c => new Promise((res, rej) => c.toBlob(b => b ? b.arrayBuffer().then(a => res(new Uint8Array(a)), rej) : rej(new Error('PNG encoding failed')), 'image/png'));
-async function writePanel(model, progress, dpi = 100) {
-  const s = dpi / 100, P = v => Math.round(v / s), T = pt => Math.max(1, Math.round(pt / s));
-  const used = new Set();
-  for (const it of model.items) if (it.kind === 'GAUGE') it.frames.forEach(f => f && used.add(f));
-  const names = ['background.png', ...[...used].sort()];
-  const hex = new Map();
-  for (let i = 0; i < names.length; i++) { hex.set(names[i], toHex(await pngBytes(model.imgs.get(names[i])))); if (i % 12 === 0) progress(i / names.length); }
-  const L = ['<SPVER>100</SPVER><SWVER>7.35.7000</SWVER>', `<SPWIDTH>${P(model.w)}</SPWIDTH><SPHEIGHT>${P(model.h)}</SPHEIGHT><SPBGCOLOR>0</SPBGCOLOR>`];
-  for (const it of model.items) {
-    if (it.kind === 'IMG') L.push(`<ID>IMG</ID><URL></URL><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY><IMGFIL>${it.name}</IMGFIL><IMGDAT>${hex.get(it.name)}</IMGDAT>`);
-    else if (it.kind === 'DIV') L.push(`<ID>-LBL</ID><TXTSIZ>8</TXTSIZ><FNTNAM></FNTNAM><LBL>${it.text}</LBL><LBLCOL>16777215</LBLCOL><LBLBIS>000</LBLBIS><SHDCOL>0</SHDCOL><SHDDIS>1</SHDDIS><SHDDEP>1</SHDDEP><URL></URL><ITMX>0</ITMX><ITMY>0</ITMY>`);
-    else if (it.kind === 'GAUGE') L.push(`<ID>[GAUGE]${it.sensor}</ID><LBL>${it.slabel}</LBL><TYP>Custom</TYP><SIZ>S</SIZ><MINVAL>${fmtNum(it.lo)}</MINVAL><MAXVAL>${fmtNum(it.hi)}</MAXVAL><SHWICO>0</SHWICO><SHWVAL>${it.showVal ? 1 : 0}</SHWVAL><TXTSIZ>${it.showVal ? T(it.pt) : 8}</TXTSIZ><FNTNAM>${it.font}</FNTNAM><VALCOL>${bgr(it.col)}</VALCOL><VALBI>00</VALBI><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY><STAFLS>${it.frames.join('|')}</STAFLS>`);
-    else if (it.kind === 'SIMPLE') L.push(`<ID>[SIMPLE]${it.sensor}</ID><TXTSIZ>${T(it.pt)}</TXTSIZ><FNTNAM>${it.font}</FNTNAM><TXTCOL>${bgr(it.col)}</TXTCOL><TXTBIR>00${it.align === 'r' ? 1 : 0}</TXTBIR><SHWLBL>0</SHWLBL><LBL>${it.slabel}</LBL><SHWUNT>${it.unit ? 1 : 0}</SHWUNT><UNT>${it.unit}</UNT><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY>`);
-    else if (it.kind === 'GRAPH') L.push(`<ID>[GRAPH]${it.sensor}</ID><LBL>${it.slabel}</LBL><TYP>LG</TYP><WID>${P(it.w)}</WID><HEI>${P(it.h)}</HEI><GPHSTP>${it.step}</GPHSTP><GPHTCK>${it.thick}</GPHTCK><GRDDNS>40</GRDDNS><MINVAL>${fmtNum(it.lo)}</MINVAL><MAXVAL>${fmtNum(it.hi)}</MAXVAL><AUTSCL>${it.auto ? 1 : 0}</AUTSCL><GRDCOL>${bgr(C.GRID)}</GRDCOL><GPHCOL>${bgr(it.col)}</GPHCOL><BGCOL>0</BGCOL><FRMCOL>${bgr(C.HAIR)}</FRMCOL><GPHBFG>000</GPHBFG><SHWSCL>0</SHWSCL><TXTSIZ>8</TXTSIZ><FNTNAM>Segoe UI</FNTNAM><SCLCOL>${bgr(C.LO)}</SCLCOL><SCLBI>000</SCLBI><ITMX>${P(it.x)}</ITMX><ITMY>${P(it.y)}</ITMY>`);
-  }
-  for (const n of names.slice(1)) L.push(`<GAUSTAFNM>${n}</GAUSTAFNM><GAUSTADAT>${hex.get(n)}</GAUSTADAT>`);
-  const text = L.join('\r\n') + '\r\n';
-  const out = new Uint8Array(text.length);        // Windows-1252: AIDA64 files store ° as one byte
-  for (let i = 0; i < text.length; i++) { const c = text.charCodeAt(i); out[i] = c < 256 ? c : 63; }
-  progress(1);
-  return out;
-}
-
-/* ---- minimal single-file ZIP (deflate when the browser can) ---- */
-const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
-function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
-async function deflateRaw(u8) {
-  if (typeof CompressionStream === 'undefined') return null;
-  try { return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()); } catch (e) { return null; }
-}
-async function makeZip(name, data) {
-  const nb = new TextEncoder().encode(name), crc = crc32(data);
-  let comp = await deflateRaw(data), method = 8;
-  if (!comp || comp.length >= data.length) { comp = data; method = 0; }
-  const now = new Date(), dt = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), dd = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
-  const lh = new DataView(new ArrayBuffer(30));
-  [[0, 0x04034b50, 4], [4, 20, 2], [6, 0, 2], [8, method, 2], [10, dt, 2], [12, dd, 2], [14, crc, 4], [18, comp.length, 4], [22, data.length, 4], [26, nb.length, 2], [28, 0, 2]]
-    .forEach(([o, v, s]) => s === 4 ? lh.setUint32(o, v, true) : lh.setUint16(o, v, true));
-  const cd = new DataView(new ArrayBuffer(46));
-  [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0, 2], [10, method, 2], [12, dt, 2], [14, dd, 2], [16, crc, 4], [20, comp.length, 4], [24, data.length, 4], [28, nb.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, 0, 4]]
-    .forEach(([o, v, s]) => s === 4 ? cd.setUint32(o, v, true) : cd.setUint16(o, v, true));
-  const eo = new DataView(new ArrayBuffer(22));
-  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, 1, 2], [10, 1, 2], [12, 46 + nb.length, 4], [16, 30 + nb.length + comp.length, 4], [20, 0, 2]]
-    .forEach(([o, v, s]) => s === 4 ? eo.setUint32(o, v, true) : eo.setUint16(o, v, true));
-  return new Blob([lh, nb, comp, cd, nb, eo], { type: 'application/zip' });
-}
+/* ================================================================ .sensorpanel writer and zip: src/shared/sp-writer.js, sp-zip.js */
+const { writePanel } = SP.writer, { makeZip } = SP.zip;
 
 /* ================================================================ settings UI */
 const STORE_KEY = 'modern-split-builder-v1';

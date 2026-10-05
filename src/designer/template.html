@@ -1,0 +1,291 @@
+<title>Panel Designer</title>
+<meta name="description" content="Design your own AIDA64 SensorPanel in the browser: drag components onto a black canvas, bind them to your PC's sensors and export a .sensorpanel file.">
+<style>
+/*__FONTS__*/
+/* Layout: a black editor (the subject is an OLED panel). Toolbar on top; components and your PC on the left; the canvas in the
+   middle; the inspector on the right. Below 900 px everything stacks: canvas first, then one panel at a time behind tabs. */
+:root {
+  --bg: #000000; --surface: #0B0C0E; --raised: #121417; --field: #111316; --line: #22262B; --line2: #2E3338;
+  --fg: #E9EDF2; --muted: #8A939D; --dim: #5E666F; --accent: #3DD9C5; --accent-ink: #00110F; --warn: #F2B740; --bad: #FF6B60; --sel: #3DD9C5;
+  --ui: "Segoe UI", "Selawik Local", system-ui, sans-serif; --mono: ui-monospace, Consolas, monospace;
+  --s-2: .75rem; --s-1: .8125rem; --s0: .875rem; --s1: 1rem; --s2: 1.25rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: var(--s0); line-height: 1.4; overflow: hidden; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+[hidden] { display: none !important; }
+.app { height: 100dvh; display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr) minmax(0, 320px); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top" "left stage right"; }
+.app > * { min-width: 0; min-height: 0; }
+
+/* toolbar */
+.top { grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: 6px; min-width: 0; }
+.brand a { color: var(--muted); text-decoration: none; font-size: var(--s-1); white-space: nowrap; }
+.brand a:hover { color: var(--fg); }
+.brand strong { font-weight: 600; white-space: nowrap; }
+#doc-name { width: 14rem; max-width: 40vw; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; }
+#doc-name:hover, #doc-name:focus { border-color: var(--line2); background: var(--field); }
+.tb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tb .sp { flex: 1; }
+.btn { border: 1px solid var(--line2); background: var(--raised); border-radius: 7px; padding: 5px 11px; font-size: var(--s-1); font-weight: 600; white-space: nowrap; }
+.btn:hover { border-color: #444b52; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { background: transparent; }
+.btn.icon { padding: 5px 8px; min-width: 32px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 4px 10px; font-size: var(--s-2); font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: #1A1E22; color: var(--fg); }
+.grow { flex: 1 1 auto; }
+
+/* side panels */
+.side { background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+.left { grid-area: left; border-right: 1px solid var(--line); }
+.right { grid-area: right; border-left: 1px solid var(--line); }
+.tabs { display: flex; border-bottom: 1px solid var(--line); flex: none; }
+.tabs button { flex: 1; border: 0; background: transparent; padding: 9px 4px; font-size: var(--s-1); font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.pane { overflow: auto; padding: 12px; display: grid; gap: 14px; align-content: start; min-height: 0; flex: 1; }
+h2 { font-size: var(--s-2); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+h3 { font-size: var(--s0); font-weight: 600; margin: 0; }
+p { margin: 0; }
+.hint { font-size: var(--s-2); color: var(--muted); }
+.hint b { color: var(--fg); font-weight: 600; }
+.note { font-size: var(--s-2); color: var(--muted); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.note.warn { color: var(--warn); border-color: #4a3a17; }
+
+/* palette */
+.pal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pal button { display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid var(--line); background: var(--raised); border-radius: 8px; padding: 8px; font-size: var(--s-1); touch-action: none; user-select: none; }
+.pal button:hover { border-color: var(--line2); background: #171A1E; }
+.pal svg { flex: none; width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 1.6; }
+.ghost-drag { position: fixed; z-index: 50; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: #1A1E22; border: 1px solid var(--accent); font-size: var(--s-1); transform: translate(-50%, -50%); }
+
+/* your PC */
+.steps { margin: 0; padding: 0 0 0 18px; display: grid; gap: 8px; font-size: var(--s-1); color: var(--muted); }
+.steps b { color: var(--fg); font-weight: 600; }
+.cmd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: start; margin-top: 4px; }
+.cmd code { font-family: var(--mono); font-size: 11px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; word-break: break-all; max-height: 7.5em; overflow: auto; }
+textarea { width: 100%; min-height: 70px; resize: vertical; background: var(--field); border: 1px solid var(--line2); border-radius: 8px; padding: 8px; font-family: var(--mono); font-size: 11px; }
+.drop { border: 1px dashed var(--line2); border-radius: 10px; padding: 12px; text-align: center; color: var(--muted); font-size: var(--s-1); }
+.drop.over, body.dragging .drop { border-color: var(--accent); color: var(--fg); }
+.search { width: 100%; background: var(--field); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 10px; }
+.comp { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.comp > summary { list-style: none; cursor: pointer; padding: 8px 10px; display: flex; align-items: center; gap: 8px; background: var(--raised); font-weight: 600; font-size: var(--s-1); }
+.comp > summary::-webkit-details-marker { display: none; }
+.comp > summary .n { margin-left: auto; color: var(--muted); font-weight: 400; }
+.comp .quick { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 10px 0; }
+.comp .quick button { border: 1px solid var(--line2); background: transparent; border-radius: 999px; padding: 2px 8px; font-size: 11px; color: var(--accent); touch-action: none; }
+.sens { list-style: none; margin: 0; padding: 4px 0; }
+.sens li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 4px 10px; cursor: grab; touch-action: none; user-select: none; font-size: var(--s-1); }
+.sens li:hover { background: #15181B; }
+.sens .id { grid-column: 1; font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+.sens .v { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+.hw { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: var(--s-1); }
+.hw dt { color: var(--muted); }
+.hw dd { margin: 0; }
+
+/* layers */
+.layers { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: var(--s-1); }
+.layers li { display: grid; grid-template-columns: 22px 22px minmax(0, 1fr) auto; align-items: center; gap: 2px; padding: 3px 6px; border-radius: 6px; cursor: pointer; }
+.layers li.child { padding-left: 22px; }
+.layers li:hover { background: #15181B; }
+.layers li.sel { background: #10302C; }
+.layers li.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.layers .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layers .ty { color: var(--dim); font-size: 11px; }
+.layers button { border: 0; background: transparent; padding: 0; width: 20px; height: 20px; color: var(--muted); font-size: 12px; line-height: 1; }
+.layers button { display: grid; place-items: center; }
+.layers button.off { color: var(--dim); opacity: .55; }
+.layers button.on { color: var(--warn); }
+.layers li:not(:hover) button.off[aria-label="Lock"] { opacity: 0; }
+.badge { display: inline-block; font-size: 10px; font-weight: 700; color: var(--warn); border: 1px solid currentColor; border-radius: 999px; padding: 0 5px; margin-left: 4px; }
+
+/* stage */
+.stage { grid-area: stage; position: relative; overflow: hidden; background: #08090B; touch-action: none; }
+#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#overlay { position: absolute; inset: 0; pointer-events: none; }
+.selbox { position: absolute; border: 1px solid var(--sel); pointer-events: none; }
+.selbox.group { border-style: dashed; }
+.selbox.hover { border-color: rgba(61, 217, 197, .45); }
+.selbox .label { position: absolute; left: -1px; bottom: 100%; margin-bottom: 2px; background: var(--sel); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; padding: 0 5px; border-radius: 3px; white-space: nowrap; }
+.handle { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: var(--bg); border: 1.5px solid var(--sel); border-radius: 2px; pointer-events: auto; touch-action: none; }
+.guide { position: absolute; background: #FF4FB1; pointer-events: none; }
+.marquee { position: absolute; border: 1px solid var(--sel); background: rgba(61, 217, 197, .08); pointer-events: none; }
+.status { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 5px 12px; font-size: var(--s-2); color: var(--muted); background: rgba(8, 9, 11, .88); border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; pointer-events: auto; }
+.status b { color: var(--fg); font-weight: 400; }
+.status .warn { color: var(--warn); }
+.empty-hint { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: var(--dim); font-size: var(--s1); text-align: center; padding: 20px; }
+
+/* inspector */
+.f { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); gap: 8px; align-items: center; }
+.f > label, .f > .lab { font-size: var(--s-1); color: var(--muted); }
+.f input[type=text], .f input[type=number], .f select, .xywh input, .rows input, .rows select, .fld { width: 100%; min-width: 0; background: var(--field); border: 1px solid var(--line2); border-radius: 6px; padding: 4px 7px; height: 30px; font-size: var(--s-1); }
+.f input[type=number], .xywh input { font-variant-numeric: tabular-nums; }
+.f input[type=checkbox] { justify-self: start; width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+.f .hint { grid-column: 1 / -1; margin-top: -4px; }
+.colorf { display: grid; grid-template-columns: minmax(0, 1fr) 34px; gap: 6px; }
+.colorf input[type=color] { width: 34px; height: 30px; padding: 2px; border: 1px solid var(--line2); border-radius: 6px; background: var(--field); }
+.xywh { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.xywh label { display: grid; gap: 2px; font-size: 10.5px; color: var(--muted); }
+fieldset.sec { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+details.sec > summary { cursor: pointer; font-size: var(--s-2); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 4px 0; }
+details.sec > div { display: grid; gap: 8px; padding-top: 6px; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.rows { display: grid; gap: 6px; }
+.rows .row { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+#theme-body { display: grid; gap: 22px; }
+.rows .row .rh { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.rows .row .rh button { border: 1px solid var(--line2); background: transparent; border-radius: 5px; padding: 0 6px; font-size: 11px; }
+.rows .row label { display: grid; grid-template-columns: minmax(0, 6rem) minmax(0, 1fr); align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.tokens { display: grid; gap: 6px; }
+.tokens label { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 8px; font-size: var(--s-1); }
+.tokens input { width: 34px; height: 26px; padding: 1px; border: 1px solid var(--line2); border-radius: 5px; background: var(--field); }
+.sensrep { display: grid; gap: 6px; }
+.sensrep .r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: center; font-size: var(--s-1); }
+.sensrep code { font-family: var(--mono); font-size: 11px; }
+.miss { color: var(--warn); }
+
+/* dialogs */
+dialog { background: var(--surface); color: var(--fg); border: 1px solid var(--line2); border-radius: 14px; padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); }
+dialog::backdrop { background: rgba(0, 0, 0, .72); }
+dialog form, .dlg { display: grid; gap: 16px; padding: 20px; max-height: calc(100dvh - 34px); overflow: auto; }
+dialog h1 { font-size: var(--s2); font-weight: 300; margin: 0; }
+.dlg-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.starts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.starts button { display: grid; gap: 6px; text-align: left; border: 1px solid var(--line2); background: var(--raised); border-radius: 12px; padding: 14px; }
+.starts button:hover { border-color: var(--accent); }
+.starts strong { font-size: var(--s1); font-weight: 600; }
+.starts span { color: var(--muted); font-size: var(--s-1); }
+.recent { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.recent button { width: 100%; text-align: left; border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; gap: 10px; font-size: var(--s-1); }
+.recent span { color: var(--muted); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px 24px; }
+.checks { display: grid; gap: 4px; }
+.checks label { display: flex; gap: 8px; align-items: center; font-size: var(--s-1); }
+.checks input { accent-color: var(--accent); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; font-size: var(--s-1); }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+#exp-status.ok { color: var(--accent); } #exp-status.err { color: var(--bad); }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60; background: #1A1E22; border: 1px solid var(--line2); border-radius: 10px; padding: 8px 14px; font-size: var(--s-1); max-width: calc(100vw - 32px); }
+.mtabs { display: none; }
+
+/* phones and narrow windows: canvas on top, one panel below, chosen with tabs */
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  .app { height: auto; min-height: 100dvh; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto; grid-template-areas: "top" "stage" "mtabs" "panel"; }
+  .stage { height: clamp(240px, 64vw, 56vh); }
+  .mtabs { grid-area: mtabs; display: flex; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .mtabs button { flex: 1; border: 0; background: transparent; padding: 10px 4px; font-size: var(--s-1); font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+  .mtabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+  .left, .right { grid-area: panel; border: 0; }
+  .left .tabs { display: none; }
+  body:not(.m-add):not(.m-pc):not(.m-layers) .left { display: none; }
+  body:not(.m-inspect) .right { display: none; }
+  body.m-inspect .left { display: none; }
+  #doc-name { width: 9rem; }
+  .status { position: static; }
+}
+@media (max-width: 560px) { .top { padding: 8px; } .seg button { padding: 4px 7px; } .pal { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><a href="../" title="AIDA64 SensorPanels home">SensorPanels</a><strong>Designer</strong></div>
+    <input id="doc-name" aria-label="Design name" maxlength="80" autocomplete="off">
+    <div class="tb">
+      <button type="button" class="btn" id="btn-new">New</button>
+      <button type="button" class="btn" id="btn-open">Open…</button>
+      <button type="button" class="btn" id="btn-save" title="Save the design as a file you can open again">Save</button>
+      <button type="button" class="btn" id="btn-share">Share</button>
+    </div>
+    <div class="tb">
+      <button type="button" class="btn icon" id="btn-undo" aria-label="Undo" title="Undo (Ctrl+Z)">↶</button>
+      <button type="button" class="btn icon" id="btn-redo" aria-label="Redo" title="Redo (Ctrl+Y)">↷</button>
+      <button type="button" class="btn icon" id="zoom-out" aria-label="Zoom out">−</button>
+      <button type="button" class="btn" id="zoom-fit" title="Fit the panel in the window">Fit</button>
+      <button type="button" class="btn icon" id="zoom-in" aria-label="Zoom in">+</button>
+      <button type="button" class="btn icon" id="btn-snap" aria-pressed="true" title="Snap to edges, centres and the grid (hold Alt to move freely)">⌗</button>
+    </div>
+    <div class="seg" role="group" aria-label="Simulated readings" id="scen">
+      <button type="button" data-sc="idle" aria-pressed="false">Idle</button>
+      <button type="button" data-sc="load" aria-pressed="true">Load</button>
+      <button type="button" data-sc="pc" aria-pressed="false" hidden>My PC</button>
+    </div>
+    <span class="grow"></span>
+    <button type="button" class="btn primary" id="btn-export">Export</button>
+  </header>
+
+  <aside class="side left" aria-label="Components, your PC and layers">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-add" aria-selected="true" aria-controls="pane-add">Add</button>
+      <button type="button" role="tab" id="tab-pc" aria-selected="false" aria-controls="pane-pc">Your PC</button>
+      <button type="button" role="tab" id="tab-layers" aria-selected="false" aria-controls="pane-layers">Layers</button>
+    </div>
+    <div class="pane" id="pane-add" role="tabpanel" aria-labelledby="tab-add"></div>
+    <div class="pane" id="pane-pc" role="tabpanel" aria-labelledby="tab-pc" hidden></div>
+    <div class="pane" id="pane-layers" role="tabpanel" aria-labelledby="tab-layers" hidden></div>
+  </aside>
+
+  <main class="stage" id="stage-wrap" aria-label="Panel canvas">
+    <canvas id="stage" tabindex="0" aria-label="Panel canvas. Arrow keys move the selection, Delete removes it."></canvas>
+    <div id="overlay"></div>
+    <div class="empty-hint" id="empty-hint" hidden><p>Drag components here from the left,<br>or start from a theme with New.</p></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </main>
+
+  <nav class="mtabs" role="tablist" aria-label="Panels">
+    <button type="button" data-m="add" aria-selected="true">Add</button><button type="button" data-m="pc" aria-selected="false">Your PC</button>
+    <button type="button" data-m="layers" aria-selected="false">Layers</button><button type="button" data-m="inspect" aria-selected="false">Inspect</button>
+  </nav>
+
+  <aside class="side right" aria-label="Inspector">
+    <div class="pane" id="inspector"></div>
+  </aside>
+</div>
+
+<dialog id="dlg-start" aria-labelledby="start-h"><div class="dlg">
+  <h1 id="start-h">Start a panel</h1>
+  <div class="starts">
+    <button type="button" data-start="blank"><strong>Blank</strong><span>An empty black panel. Drag components onto it.</span></button>
+    <button type="button" data-start="modern"><strong>Modern Split</strong><span>Rings, every core, drives and fans. Fits your PC's hardware.</span></button>
+    <button type="button" data-start="classic"><strong>Classic OLED</strong><span>Analog dials and slim meters.</span></button>
+    <button type="button" data-start="open"><strong>Open a file</strong><span>A saved design, or any .sensorpanel / .spzip to edit.</span></button>
+  </div>
+  <div id="start-recent" hidden><h2>Recent</h2><ul class="recent" id="recent-list"></ul></div>
+  <div class="dlg-foot"><button type="button" class="btn ghost" data-close>Close</button></div>
+</div></dialog>
+
+<dialog id="dlg-theme" aria-labelledby="theme-h"><form method="dialog" id="theme-form">
+  <h1 id="theme-h">Theme setup</h1>
+  <div id="theme-body"></div>
+  <div class="dlg-foot"><button type="button" class="btn ghost" data-close>Cancel</button><button type="submit" class="btn primary" value="ok">Create</button></div>
+</form></dialog>
+
+<dialog id="dlg-export" aria-labelledby="exp-h"><div class="dlg">
+  <h1 id="exp-h">Export</h1>
+  <div id="exp-body"></div>
+  <p id="exp-status" role="status" aria-live="polite"></p>
+  <div class="dlg-foot"><button type="button" class="btn ghost" data-close>Close</button><button type="button" class="btn primary" id="exp-go">Export</button></div>
+</div></dialog>
+
+<dialog id="dlg-share" aria-labelledby="share-h"><div class="dlg">
+  <h1 id="share-h">Share this design</h1>
+  <div id="share-body"></div>
+  <div class="dlg-foot"><button type="button" class="btn ghost" data-close>Close</button></div>
+</div></dialog>
+
+<dialog id="dlg-ask" aria-labelledby="ask-h"><form method="dialog" class="dlg">
+  <h1 id="ask-h"></h1><p id="ask-text" class="hint"></p>
+  <div class="dlg-foot" id="ask-btns"></div>
+</form></dialog>
+
+<input type="file" id="file-open" hidden accept=".json,.sensorpanel,.spzip,.reg,.txt">
+<input type="file" id="file-image" hidden accept="image/png,image/jpeg,image/webp,image/bmp">
+<!--__SCRIPTS__-->

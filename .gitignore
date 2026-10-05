@@ -2,6 +2,8 @@
 src/builder/modern-split-builder.html
 src/classic/classic-oled-panel.html
 src/classic/out/
+src/designer/designer.html
+src/tools/out/
 
 __pycache__/
 *.pyc

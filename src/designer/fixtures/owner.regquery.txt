@@ -1,0 +1,269 @@
+
+HKEY_CURRENT_USER\Software\FinalWire\AIDA64\SensorValues
+    Label.SDATE    REG_SZ    Date
+    Value.SDATE    REG_SZ    5.10.2026
+    Label.STIME    REG_SZ    Time
+    Value.STIME    REG_SZ    22:41:07
+    Label.SUPTIME    REG_SZ    UpTime
+    Value.SUPTIME    REG_SZ    3:12:44
+    Label.SCPUCLK    REG_SZ    CPU Clock
+    Value.SCPUCLK    REG_SZ    5100
+    Label.SCPUMUL    REG_SZ    CPU Multiplier
+    Value.SCPUMUL    REG_SZ    51.00
+    Label.SCPUUTI    REG_SZ    CPU Utilization
+    Value.SCPUUTI    REG_SZ    34
+    Label.SCPUTHR    REG_SZ    CPU Throttling
+    Value.SCPUTHR    REG_SZ    0
+    Label.SMEMUTI    REG_SZ    Memory Utilization
+    Value.SMEMUTI    REG_SZ    49
+    Label.SUSEDMEM    REG_SZ    Used Memory
+    Value.SUSEDMEM    REG_SZ    16056
+    Label.SFREEMEM    REG_SZ    Free Memory
+    Value.SFREEMEM    REG_SZ    16712
+    Label.SGPU1CLK    REG_SZ    GPU1 Clock
+    Value.SGPU1CLK    REG_SZ    2745
+    Label.SGPU1MEMCLK    REG_SZ    GPU1 Memory Clock
+    Value.SGPU1MEMCLK    REG_SZ    10501
+    Label.SGPU1UTI    REG_SZ    GPU1 Utilization
+    Value.SGPU1UTI    REG_SZ    97
+    Label.SGPU1PERFCAP    REG_SZ    GPU1 PerfCap Reason
+    Value.SGPU1PERFCAP    REG_SZ    Power
+    Label.SVMEMUSAGE    REG_SZ    Video Memory Utilization
+    Value.SVMEMUSAGE    REG_SZ    71
+    Label.SUSEDVMEM    REG_SZ    Used Video Memory
+    Value.SUSEDVMEM    REG_SZ    11633
+    Label.SFREEVMEM    REG_SZ    Free Video Memory
+    Value.SFREEVMEM    REG_SZ    4751
+    Label.SVREFRATE    REG_SZ    Vertical Refresh Rate
+    Value.SVREFRATE    REG_SZ    165
+    Label.SPRIIPADDR    REG_SZ    Primary IP Address
+    Value.SPRIIPADDR    REG_SZ    192.168.1.20
+    Label.SEXTIPADDR    REG_SZ    External IP Address
+    Value.SEXTIPADDR    REG_SZ    203.0.113.7
+    Label.SDRVCUTI    REG_SZ    Drive C: Utilization
+    Value.SDRVCUTI    REG_SZ    63
+    Label.SDRVDUTI    REG_SZ    Drive D: Utilization
+    Value.SDRVDUTI    REG_SZ    41
+    Label.SCC-1-1    REG_SZ    CPU #1 / Core #1 Clock
+    Value.SCC-1-1    REG_SZ    5100
+    Label.SCC-1-2    REG_SZ    CPU #1 / Core #2 Clock
+    Value.SCC-1-2    REG_SZ    5100
+    Label.SCC-1-3    REG_SZ    CPU #1 / Core #3 Clock
+    Value.SCC-1-3    REG_SZ    5100
+    Label.SCC-1-4    REG_SZ    CPU #1 / Core #4 Clock
+    Value.SCC-1-4    REG_SZ    5100
+    Label.SCC-1-5    REG_SZ    CPU #1 / Core #5 Clock
+    Value.SCC-1-5    REG_SZ    5100
+    Label.SCC-1-6    REG_SZ    CPU #1 / Core #6 Clock
+    Value.SCC-1-6    REG_SZ    5100
+    Label.SCC-1-7    REG_SZ    CPU #1 / Core #7 Clock
+    Value.SCC-1-7    REG_SZ    3900
+    Label.SCC-1-8    REG_SZ    CPU #1 / Core #8 Clock
+    Value.SCC-1-8    REG_SZ    3900
+    Label.SCC-1-9    REG_SZ    CPU #1 / Core #9 Clock
+    Value.SCC-1-9    REG_SZ    3900
+    Label.SCC-1-10    REG_SZ    CPU #1 / Core #10 Clock
+    Value.SCC-1-10    REG_SZ    3900
+    Label.SCC-1-11    REG_SZ    CPU #1 / Core #11 Clock
+    Value.SCC-1-11    REG_SZ    3900
+    Label.SCC-1-12    REG_SZ    CPU #1 / Core #12 Clock
+    Value.SCC-1-12    REG_SZ    3900
+    Label.SCC-1-13    REG_SZ    CPU #1 / Core #13 Clock
+    Value.SCC-1-13    REG_SZ    3900
+    Label.SCC-1-14    REG_SZ    CPU #1 / Core #14 Clock
+    Value.SCC-1-14    REG_SZ    3900
+    Label.SCPU1UTI    REG_SZ    CPU1 Utilization
+    Value.SCPU1UTI    REG_SZ    31
+    Label.SCPU2UTI    REG_SZ    CPU2 Utilization
+    Value.SCPU2UTI    REG_SZ    32
+    Label.SCPU3UTI    REG_SZ    CPU3 Utilization
+    Value.SCPU3UTI    REG_SZ    33
+    Label.SCPU4UTI    REG_SZ    CPU4 Utilization
+    Value.SCPU4UTI    REG_SZ    34
+    Label.SCPU5UTI    REG_SZ    CPU5 Utilization
+    Value.SCPU5UTI    REG_SZ    35
+    Label.SCPU6UTI    REG_SZ    CPU6 Utilization
+    Value.SCPU6UTI    REG_SZ    36
+    Label.SCPU7UTI    REG_SZ    CPU7 Utilization
+    Value.SCPU7UTI    REG_SZ    30
+    Label.SCPU8UTI    REG_SZ    CPU8 Utilization
+    Value.SCPU8UTI    REG_SZ    31
+    Label.SCPU9UTI    REG_SZ    CPU9 Utilization
+    Value.SCPU9UTI    REG_SZ    32
+    Label.SCPU10UTI    REG_SZ    CPU10 Utilization
+    Value.SCPU10UTI    REG_SZ    33
+    Label.SCPU11UTI    REG_SZ    CPU11 Utilization
+    Value.SCPU11UTI    REG_SZ    34
+    Label.SCPU12UTI    REG_SZ    CPU12 Utilization
+    Value.SCPU12UTI    REG_SZ    35
+    Label.SCPU13UTI    REG_SZ    CPU13 Utilization
+    Value.SCPU13UTI    REG_SZ    36
+    Label.SCPU14UTI    REG_SZ    CPU14 Utilization
+    Value.SCPU14UTI    REG_SZ    30
+    Label.SCPU15UTI    REG_SZ    CPU15 Utilization
+    Value.SCPU15UTI    REG_SZ    31
+    Label.SCPU16UTI    REG_SZ    CPU16 Utilization
+    Value.SCPU16UTI    REG_SZ    32
+    Label.SCPU17UTI    REG_SZ    CPU17 Utilization
+    Value.SCPU17UTI    REG_SZ    33
+    Label.SCPU18UTI    REG_SZ    CPU18 Utilization
+    Value.SCPU18UTI    REG_SZ    34
+    Label.SCPU19UTI    REG_SZ    CPU19 Utilization
+    Value.SCPU19UTI    REG_SZ    35
+    Label.SCPU20UTI    REG_SZ    CPU20 Utilization
+    Value.SCPU20UTI    REG_SZ    36
+    Label.SDSK1ACT    REG_SZ    Disk 1 Activity
+    Value.SDSK1ACT    REG_SZ    9
+    Label.SDSK1READSPD    REG_SZ    Disk 1 Read Speed
+    Value.SDSK1READSPD    REG_SZ    85.3
+    Label.SDSK1WRITESPD    REG_SZ    Disk 1 Write Speed
+    Value.SDSK1WRITESPD    REG_SZ    6.1
+    Label.SDSK2ACT    REG_SZ    Disk 2 Activity
+    Value.SDSK2ACT    REG_SZ    2
+    Label.SDSK2READSPD    REG_SZ    Disk 2 Read Speed
+    Value.SDSK2READSPD    REG_SZ    85.3
+    Label.SDSK2WRITESPD    REG_SZ    Disk 2 Write Speed
+    Value.SDSK2WRITESPD    REG_SZ    6.1
+    Label.SNIC1DLRATE    REG_SZ    NIC1 Download Rate
+    Value.SNIC1DLRATE    REG_SZ    0.0
+    Label.SNIC1ULRATE    REG_SZ    NIC1 Upload Rate
+    Value.SNIC1ULRATE    REG_SZ    0.0
+    Label.SNIC1TOTDL    REG_SZ    NIC1 Total Download
+    Value.SNIC1TOTDL    REG_SZ    0
+    Label.SNIC1TOTUL    REG_SZ    NIC1 Total Upload
+    Value.SNIC1TOTUL    REG_SZ    0
+    Label.SNIC2DLRATE    REG_SZ    NIC2 Download Rate
+    Value.SNIC2DLRATE    REG_SZ    0.0
+    Label.SNIC2ULRATE    REG_SZ    NIC2 Upload Rate
+    Value.SNIC2ULRATE    REG_SZ    0.0
+    Label.SNIC2TOTDL    REG_SZ    NIC2 Total Download
+    Value.SNIC2TOTDL    REG_SZ    0
+    Label.SNIC2TOTUL    REG_SZ    NIC2 Total Upload
+    Value.SNIC2TOTUL    REG_SZ    0
+    Label.SNIC3DLRATE    REG_SZ    NIC3 Download Rate
+    Value.SNIC3DLRATE    REG_SZ    0.0
+    Label.SNIC3ULRATE    REG_SZ    NIC3 Upload Rate
+    Value.SNIC3ULRATE    REG_SZ    0.0
+    Label.SNIC3TOTDL    REG_SZ    NIC3 Total Download
+    Value.SNIC3TOTDL    REG_SZ    0
+    Label.SNIC3TOTUL    REG_SZ    NIC3 Total Upload
+    Value.SNIC3TOTUL    REG_SZ    0
+    Label.SNIC4DLRATE    REG_SZ    NIC4 Download Rate
+    Value.SNIC4DLRATE    REG_SZ    0.0
+    Label.SNIC4ULRATE    REG_SZ    NIC4 Upload Rate
+    Value.SNIC4ULRATE    REG_SZ    0.0
+    Label.SNIC4TOTDL    REG_SZ    NIC4 Total Download
+    Value.SNIC4TOTDL    REG_SZ    0
+    Label.SNIC4TOTUL    REG_SZ    NIC4 Total Upload
+    Value.SNIC4TOTUL    REG_SZ    0
+    Label.SNIC5DLRATE    REG_SZ    NIC5 Download Rate
+    Value.SNIC5DLRATE    REG_SZ    0.0
+    Label.SNIC5ULRATE    REG_SZ    NIC5 Upload Rate
+    Value.SNIC5ULRATE    REG_SZ    0.0
+    Label.SNIC5TOTDL    REG_SZ    NIC5 Total Download
+    Value.SNIC5TOTDL    REG_SZ    0
+    Label.SNIC5TOTUL    REG_SZ    NIC5 Total Upload
+    Value.SNIC5TOTUL    REG_SZ    0
+    Label.SNIC6DLRATE    REG_SZ    NIC6 Download Rate
+    Value.SNIC6DLRATE    REG_SZ    2400.5
+    Label.SNIC6ULRATE    REG_SZ    NIC6 Upload Rate
+    Value.SNIC6ULRATE    REG_SZ    180.2
+    Label.SNIC6TOTDL    REG_SZ    NIC6 Total Download
+    Value.SNIC6TOTDL    REG_SZ    15320
+    Label.SNIC6TOTUL    REG_SZ    NIC6 Total Upload
+    Value.SNIC6TOTUL    REG_SZ    1240
+    Label.SNIC6CONNSPD    REG_SZ    NIC6 Connection Speed
+    Value.SNIC6CONNSPD    REG_SZ    2500
+    Label.TMOBO    REG_SZ    Motherboard
+    Value.TMOBO    REG_SZ    38
+    Label.TCPU    REG_SZ    CPU
+    Value.TCPU    REG_SZ    66
+    Label.TCPUPKG    REG_SZ    CPU Package
+    Value.TCPUPKG    REG_SZ    67
+    Label.TCPUIAC    REG_SZ    CPU IA Cores
+    Value.TCPUIAC    REG_SZ    66
+    Label.TPCH    REG_SZ    PCH
+    Value.TPCH    REG_SZ    50
+    Label.TVRM    REG_SZ    VRM
+    Value.TVRM    REG_SZ    52
+    Label.TWATER    REG_SZ    Water
+    Value.TWATER    REG_SZ    33.4
+    Label.TDIMMTS2    REG_SZ    2nd DIMM
+    Value.TDIMMTS2    REG_SZ    44
+    Label.TDIMMTS4    REG_SZ    4th DIMM
+    Value.TDIMMTS4    REG_SZ    45
+    Label.TGPU1    REG_SZ    GPU1
+    Value.TGPU1    REG_SZ    66
+    Label.TGPU1DIO    REG_SZ    GPU1 Diode
+    Value.TGPU1DIO    REG_SZ    66
+    Label.TGPU1HOT    REG_SZ    GPU1 Hotspot
+    Value.TGPU1HOT    REG_SZ    79
+    Label.TGPU1MEM    REG_SZ    GPU1 Memory
+    Value.TGPU1MEM    REG_SZ    72
+    Label.THDD1    REG_SZ    Samsung SSD 990 PRO 2TB
+    Value.THDD1    REG_SZ    41
+    Label.THDD2    REG_SZ    WD_BLACK SN850X 4000GB
+    Value.THDD2    REG_SZ    37
+    Label.TCC-1-1    REG_SZ    CPU #1 / Core #1
+    Value.TCC-1-1    REG_SZ    65
+    Label.TCC-1-2    REG_SZ    CPU #1 / Core #2
+    Value.TCC-1-2    REG_SZ    66
+    Label.TCC-1-3    REG_SZ    CPU #1 / Core #3
+    Value.TCC-1-3    REG_SZ    67
+    Label.TCC-1-4    REG_SZ    CPU #1 / Core #4
+    Value.TCC-1-4    REG_SZ    64
+    Label.TCC-1-5    REG_SZ    CPU #1 / Core #5
+    Value.TCC-1-5    REG_SZ    65
+    Label.TCC-1-6    REG_SZ    CPU #1 / Core #6
+    Value.TCC-1-6    REG_SZ    66
+    Label.TCC-1-7    REG_SZ    CPU #1 / Core #7
+    Value.TCC-1-7    REG_SZ    67
+    Label.TCC-1-8    REG_SZ    CPU #1 / Core #8
+    Value.TCC-1-8    REG_SZ    64
+    Label.TCC-1-9    REG_SZ    CPU #1 / Core #9
+    Value.TCC-1-9    REG_SZ    65
+    Label.TCC-1-10    REG_SZ    CPU #1 / Core #10
+    Value.TCC-1-10    REG_SZ    66
+    Label.TCC-1-11    REG_SZ    CPU #1 / Core #11
+    Value.TCC-1-11    REG_SZ    67
+    Label.TCC-1-12    REG_SZ    CPU #1 / Core #12
+    Value.TCC-1-12    REG_SZ    64
+    Label.TCC-1-13    REG_SZ    CPU #1 / Core #13
+    Value.TCC-1-13    REG_SZ    65
+    Label.TCC-1-14    REG_SZ    CPU #1 / Core #14
+    Value.TCC-1-14    REG_SZ    66
+    Label.FCPU    REG_SZ    CPU
+    Value.FCPU    REG_SZ    1210
+    Label.FAIOPUMP    REG_SZ    AIO Pump
+    Value.FAIOPUMP    REG_SZ    2620
+    Label.FCHA1    REG_SZ    Chassis #1
+    Value.FCHA1    REG_SZ    980
+    Label.FCHA2    REG_SZ    Chassis #2
+    Value.FCHA2    REG_SZ    960
+    Label.FCHA3    REG_SZ    Chassis #3
+    Value.FCHA3    REG_SZ    1000
+    Label.FCHA4    REG_SZ    Chassis #4
+    Value.FCHA4    REG_SZ    0
+    Label.FGPU1    REG_SZ    GPU1
+    Value.FGPU1    REG_SZ    1650
+    Label.DGPU1    REG_SZ    GPU1
+    Value.DGPU1    REG_SZ    45
+    Label.VCPU    REG_SZ    CPU Core
+    Value.VCPU    REG_SZ    1.245
+    Label.VP12V    REG_SZ    +12 V
+    Value.VP12V    REG_SZ    12.048
+    Label.VGPU1    REG_SZ    GPU1 Core
+    Value.VGPU1    REG_SZ    1.050
+    Label.VGPU112VHPWR    REG_SZ    GPU1 12VHPWR
+    Value.VGPU112VHPWR    REG_SZ    11.98
+    Label.PCPUPKG    REG_SZ    CPU Package
+    Value.PCPUPKG    REG_SZ    92.41
+    Label.PCPUIAC    REG_SZ    CPU IA Cores
+    Value.PCPUIAC    REG_SZ    78.12
+    Label.PGPU1    REG_SZ    GPU1
+    Value.PGPU1    REG_SZ    318.40
+    Label.PGPU1TDPP    REG_SZ    GPU1 TDP%
+    Value.PGPU1TDPP    REG_SZ    91
+    Label.PGPU112VHPWR    REG_SZ    GPU1 12VHPWR
+    Value.PGPU112VHPWR    REG_SZ    292.88
+

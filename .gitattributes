@@ -2,6 +2,9 @@
 
 # AIDA64 needs CRLF and cp1252 bytes exactly as written
 *.sensorpanel binary
+*.spzip binary
+# registry exports are UTF-16LE
+*.reg binary
 
 *.ttf binary
 *.woff2 binary

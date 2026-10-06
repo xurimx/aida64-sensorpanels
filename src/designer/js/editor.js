@@ -11,8 +11,10 @@ const on = (el, ev, fn, o) => el.addEventListener(ev, fn, o);
 /* ---------------------------------------------------------------- history */
 let coalesce = { key: null, at: 0 };
 const snapshot = () => JSON.stringify(APP.doc);
-function edit(fn, key = null) {
-  const now = Date.now(), merge = key && coalesce.key === key && now - coalesce.at < 500;
+/* one history step per gesture: edits with the same key within 500 ms merge; with o.sticky they merge however far apart
+   (an assistant request). Any other edit, a drag (pushHistory) or Undo/Redo (swapped) resets the merge. */
+function edit(fn, key = null, o = {}) {
+  const now = Date.now(), merge = key && coalesce.key === key && (o.sticky || now - coalesce.at < 500);
   const before = merge ? null : snapshot();
   fn(APP.doc);
   if (before) { APP.past.push(before); if (APP.past.length > 200) APP.past.shift(); APP.future = []; }
@@ -356,20 +358,7 @@ function replaceSensor(ws, from, to) {
   to = normId(String(to || '').trim().toUpperCase());
   if (!/^[A-Z][A-Z0-9-]{0,40}$/.test(to) || from === to) return;
   const ids = new Set(ws.map(w => w.id));
-  edit(doc => eachWidget(doc, w => {
-    if (!ids.has(w.id)) return;
-    const fix = o => { for (const k of Object.keys(o)) { if (o[k] === from && /sensor/i.test(k)) o[k] = to; else if (Array.isArray(o[k])) o[k].forEach(r => r && typeof r === 'object' && fix(r)); } };
-    fix(w.p); if (w.p.slabel) delete w.p.slabel;
-  }));
-}
-/* re-measure widgets whose size follows their content (text, values, rings, tables), keeping their anchor */
-function remeasure(w) {
-  const def = WT[w.type]; if (!def?.measure || def.resize === 'free') return;
-  const m = def.measure(w.p, APP.env, w);
-  if (def.resize === 'x') { w.h = m.h; if (w.type === 'meter') w.w = m.w; return; }
-  const a = def.anchor ? def.anchor(w.p) : 'l';
-  if (a === 'r') w.x += w.w - m.w; else if (a === 'c') { w.x += (w.w - m.w) / 2; w.y += (w.h - m.h) / 2; }
-  w.w = m.w; w.h = m.h;
+  edit(doc => eachWidget(doc, w => { if (ids.has(w.id) && swapSensor(w, from, to)) remeasure(w, APP.env); }));
 }
 
 /* ---------------------------------------------------------------- keyboard */

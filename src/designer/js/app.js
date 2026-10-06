@@ -119,8 +119,8 @@ function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => 
 
 /* ---- tabs ---- */
 function showTab(t) {
-  for (const k of ['add', 'pc', 'layers']) { $('tab-' + k).setAttribute('aria-selected', String(k === t)); $('pane-' + k).hidden = k !== t; }
-  document.body.classList.remove('m-add', 'm-pc', 'm-layers', 'm-inspect');
+  for (const k of ['add', 'pc', 'layers', 'ai']) { $('tab-' + k).setAttribute('aria-selected', String(k === t)); $('pane-' + k).hidden = k !== t; }
+  document.body.classList.remove('m-add', 'm-pc', 'm-layers', 'm-ai', 'm-inspect');
   if (t) document.body.classList.add('m-' + t);
   document.querySelectorAll('.mtabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.m === t)));
 }
@@ -135,7 +135,7 @@ async function boot() {
   on($('btn-snap'), 'click', () => { APP.snap = !APP.snap; $('btn-snap').setAttribute('aria-pressed', String(APP.snap)); });
   document.querySelectorAll('#scen button').forEach(b => on(b, 'click', () => setScenario(b.dataset.sc)));
   on($('doc-name'), 'input', e => edit(doc => { doc.name = sStr(e.target.value, 80) || 'My panel'; }, 'docname'));
-  for (const k of ['add', 'pc', 'layers']) on($('tab-' + k), 'click', () => showTab(k));
+  for (const k of ['add', 'pc', 'layers', 'ai']) on($('tab-' + k), 'click', () => showTab(k));
   document.querySelectorAll('.mtabs button').forEach(b => on(b, 'click', () => b.dataset.m === 'inspect' ? (showTab(null), document.body.classList.add('m-inspect'), document.querySelectorAll('.mtabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)))) : showTab(b.dataset.m)));
   document.querySelectorAll('dialog [data-close]').forEach(b => on(b, 'click', () => b.closest('dialog').close()));
   on($('dlg-start'), 'click', e => { const s = e.target.closest('[data-start]')?.dataset.start; if (!s) return; $('dlg-start').close(); s === 'open' ? openPicker() : openTheme(s); });
@@ -157,6 +157,7 @@ async function boot() {
   try { await Promise.all([[300, 'Selawik Local'], [400, 'Selawik Local'], [700, 'Selawik Local'], [500, 'Barlow SC Local'], [600, 'Barlow SC Local']].map(([w, f]) => document.fonts.load(`${w} 40px "${f}"`))); } catch (e) { /* fonts load late */ }
   const pc = await loadPcList();
   if (pc) { APP.pc = pc; const r = inferHw(pc); APP.hw = r.hw; APP.hwNotes = r.notes; SIM.setPc(pc); $('scen').querySelector('[data-sc="pc"]').hidden = false; }
+  await assistBoot();                  /* first: it finishes an OpenRouter sign-in and cleans the address */
   let doc = null, first = false;
   if (/[#&]d=/.test(location.hash)) {
     try { doc = await docFromLink(location.hash); const cur = await loadLocal('current').catch(() => null); if (cur?.nodes.length) await rememberRecent(cur); UI.toast('Opened a shared design. Your previous design is under New › Recent.'); }
@@ -172,6 +173,7 @@ async function boot() {
   setInterval(() => { if (!document.hidden) { SIM.tick(); requestDraw(); } }, 1000);
   if (first) openStart();
   window.__designer = { APP, setDoc, newDoc, select, insertWidgets, paletteEntries, addEntry, undo, redo, setPcList, parseSensorList, THEMES, exportBytes, openTheme, openExport,
-                        toPanel, toScreen, docJson: () => JSON.stringify(APP.doc), compile: () => compileDoc(APP.doc, APP.env), handleFile, groupSel, ungroupSel, detach, ready: true };
+                        toPanel, toScreen, docJson: () => JSON.stringify(APP.doc), compile: () => compileDoc(APP.doc, APP.env), handleFile, groupSel, ungroupSel, detach,
+                        assist: { ASSIST, KEYS, PKCE, buildAssist, showTab }, ready: true };
 }
 boot();

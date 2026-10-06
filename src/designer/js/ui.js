@@ -28,7 +28,7 @@ const fmtBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.
 
 /* ---------------------------------------------------------------- palette entries (hardware-aware) */
 function paletteEntries() {
-  const hw = APP.hw, g = hw.gpu || 1, m = (t, p, x, y, w, ht) => fitIf(WF.make(t, p, x, y, w, ht));
+  const hw = APP.hw, m = (t, p, x, y, w, ht) => fitIf(WF.make(t, p, x, y, w, ht));
   const fitIf = w => { const d = WT[w.type]; if (d.measure && d.resize !== 'free') { const s = d.measure(w.p, APP.env, w); w.w = s.w; w.h = s.h; } return w; };
   return [
     { cat: 'Text & shapes', label: 'Text', icon: 'text', make: () => [WF.text(0, 30, 'LABEL', 28, 'bold', '@title', .14)] },
@@ -45,10 +45,10 @@ function paletteEntries() {
     { cat: 'Gauges', label: 'Needle dial', icon: 'dial', make: () => [m('dial', { style: 'small', r: 240, sensor: hw.cpuTemp || 'TCPUPKG', lo: 20, hi: 100, major: 20, mid: 10, minor: 5, red: true, redFrom: 90, redTo: 100 }, 0, 0, 480, 480)], tokens: TOKENS_CLASSIC },
     { cat: 'Gauges', label: 'Linear meter', icon: 'meter', make: () => [m('meter', { sensor: 'SDRVCUTI', scale: 'pct', mw: 300 }, 0, 0, 342, 100)], tokens: TOKENS_CLASSIC },
     { cat: 'Graphs', label: 'Graph', icon: 'graph', make: () => [WF.graph('SCPUUTI', 0, 0, 600, 160, 0, 100, '@cpu')] },
-    { cat: 'Tables', label: 'CPU core table', icon: 'table', make: () => [m('coreTable', { pCores: hw.pCores, eCores: hw.eCores, smt: hw.smt !== false }, 0, 0, 0, 0)] },
-    { cat: 'Tables', label: 'Power rows', icon: 'table', make: () => [m('powerTable', { rows: [{ label: 'CPU PACKAGE', sensor: 'PCPUPKG', max: 200, unit: ' W', color: '@cpu', sensor2: '', unit2: ' V' }, { label: 'GPU', sensor: `PGPU${g}`, max: 450, unit: ' W', color: '@gpu', sensor2: '', unit2: ' V' }] }, 0, 0, 0, 0)] },
-    { cat: 'Tables', label: 'Storage rows', icon: 'table', make: () => [m('storageTable', { rows: (hw.disks?.length ? hw.disks : HW_DEFAULTS.disks).map(d => ({ name: d.name, num: d.num || 0, letter: d.letter || '' })) }, 0, 0, 0, 0)] },
-    { cat: 'Tables', label: 'Cooling row', icon: 'table', make: () => [m('fanRow', { board: false, sub: 'RPM', cells: (hw.fans?.length ? hw.fans : HW_DEFAULTS.fans).map(f => ({ label: f.label, sensor: f.id, min: 0, max: f.max, unit: '', warn: 0 })) }, 0, 0, 0, 0)] },
+    { cat: 'Tables', label: 'CPU core table', icon: 'table', make: () => [m('coreTable', tableDefaults('coreTable', hw), 0, 0, 0, 0)] },
+    { cat: 'Tables', label: 'Power rows', icon: 'table', make: () => [m('powerTable', tableDefaults('powerTable', hw), 0, 0, 0, 0)] },
+    { cat: 'Tables', label: 'Storage rows', icon: 'table', make: () => [m('storageTable', tableDefaults('storageTable', hw), 0, 0, 0, 0)] },
+    { cat: 'Tables', label: 'Cooling row', icon: 'table', make: () => [m('fanRow', tableDefaults('fanRow', hw), 0, 0, 0, 0)] },
     ...PRESETS.filter(p => p.cat === 'Tiles').map(p => ({ cat: 'Tiles', label: p.label, icon: /dial/i.test(p.id) ? 'dial' : /ring/i.test(p.id) ? 'ring' : p.id === 'meters' ? 'meter' : 'tile', name: p.label,
       make: () => p.make({ hw }), tokens: /dial|meters/.test(p.id) ? TOKENS_CLASSIC : null })),
   ];
@@ -362,7 +362,7 @@ function xywh(n, fixedSize) {
     on(el, 'input', () => { const v = +el.value; if (!Number.isFinite(v)) return;
       edit(doc => { const t = findNode(doc, n.id).node, cur = nodeBox(t);
         if (i < 2) (isGroup(t) ? t.children : [t]).forEach(w => i ? w.y += v - cur[1] : w.x += v - cur[0]);
-        else { if (i === 2) t.w = Math.max(1, v); else t.h = Math.max(1, v); if (WT[t.type]?.onResize) WT[t.type].onResize(t.p, t); remeasure(t); } }, 'box' + n.id + i); });
+        else { if (i === 2) t.w = Math.max(1, v); else t.h = Math.max(1, v); if (WT[t.type]?.onResize) WT[t.type].onResize(t.p, t); remeasure(t, APP.env); } }, 'box' + n.id + i); });
     return h('label', {}, lab, el);
   };
   box.append(mk2('X', 0), mk2('Y', 1), mk2('W', 2), mk2('H', 3));
@@ -399,7 +399,7 @@ function buildInspector() {
     if (same && WT[ws[0].type]) {
       pane.append(h('h2', { text: `All ${ws.length} ${WT[ws[0].type].label.toLowerCase()} items` }));
       const p0 = ws[0].p;
-      pane.append(...fieldsFor({ fields: WT[ws[0].type].fields.filter(f => f.section || !['sensor', 'rows', 'text'].includes(f.t)) }, p0, (k, v) => edit(doc => ws.forEach(w => { const t = findNode(doc, w.id).node; t.p[k] = v; remeasure(t); }), 'multi' + k), 'multi.'));
+      pane.append(...fieldsFor({ fields: WT[ws[0].type].fields.filter(f => f.section || !['sensor', 'rows', 'text'].includes(f.t)) }, p0, (k, v) => edit(doc => ws.forEach(w => { const t = findNode(doc, w.id).node; t.p[k] = v; remeasure(t, APP.env); }), 'multi' + k), 'multi.'));
     }
     const r = sensorReplacer(ws); if (r) pane.append(r);
   } else {
@@ -421,7 +421,7 @@ function buildInspector() {
       pane.append(h('h3', { text: def?.label || n.type }));
       pane.append(nameField(n, def?.label || n.type));
       pane.append(xywh(n, def && (def.resize === 'aspect' || def.resize === 'none')));
-      if (def) pane.append(...fieldsFor(def, n.p, (k, v) => edit(doc => { const t = findNode(doc, n.id).node; t.p[k] = v; if (k === 'sensor') delete t.p.slabel; remeasure(t); }, 'f' + n.id + k), ''));
+      if (def) pane.append(...fieldsFor(def, n.p, (k, v) => edit(doc => { const t = findNode(doc, n.id).node; t.p[k] = v; if (k === 'sensor') delete t.p.slabel; remeasure(t, APP.env); }, 'f' + n.id + k), ''));
       const miss = missingSensors(n); if (miss.length && def?.kind === 'composite') pane.append(h('p', { class: 'note warn', text: `Not reported by your PC: ${miss.slice(0, 8).join(', ')}${miss.length > 8 ? '…' : ''}` }));
       const acts = [actButton('Duplicate', () => duplicateSel()), actButton('Delete', removeSel), actButton(n.locked ? 'Unlock' : 'Lock', () => edit(() => { n.locked = !n.locked; })), actButton(n.hidden ? 'Show' : 'Hide', () => edit(() => { n.hidden = !n.hidden; }))];
       if (def?.expand) acts.unshift(actButton('Detach parts', () => detach(n), 'Turn this into separate parts you can move one by one'));
@@ -607,8 +607,8 @@ function renderStatus() {
 }
 
 const UI = {
-  stats: null,
-  refresh() { buildLayers(); buildInspector(); renderStatus(); scheduleStats(); const n = $('doc-name'); if (document.activeElement !== n) n.value = APP.doc.name; $('btn-undo').disabled = !APP.past.length; $('btn-redo').disabled = !APP.future.length; },
+  stats: null, after: [],          /* after: more things to refresh with the selection (the assistant's "Selected" chip) */
+  refresh() { buildLayers(); buildInspector(); renderStatus(); scheduleStats(); const n = $('doc-name'); if (document.activeElement !== n) n.value = APP.doc.name; $('btn-undo').disabled = !APP.past.length; $('btn-redo').disabled = !APP.future.length; UI.after.forEach(f => f()); },
   refreshInspectorBox() { const n = selNodes()[0]; if (!n) return; const b = nodeBox(n); $('inspector').querySelectorAll('.xywh input').forEach((el, i) => { if (document.activeElement !== el) el.value = Math.round(b[i] * 10) / 10; }); },
   toast(msg) { const t = h('div', { class: 'toast', role: 'status', text: msg }); document.body.append(t); setTimeout(() => t.remove(), 3200); },
 };

@@ -13,9 +13,9 @@ CORE_SCRIPTS = [
     '../shared/fontmetrics.js', '../shared/sp-core.js', '../shared/sp-zip.js', '../shared/sp-writer.js', '../shared/sp-parse.js',
     '../shared/sp-render.js', '../sensors/catalog.js',
     'js/pc.js', 'js/sim.js', 'js/doc.js', 'js/paint.js', 'js/widgets.js', 'js/gauges.js', 'js/composites.js', 'js/snippets.js',
-    'js/compile.js', 'js/theme-modern.js', 'js/theme-classic.js', 'js/open.js', 'js/store.js',
+    'js/compile.js', 'js/theme-modern.js', 'js/theme-classic.js', 'js/open.js', 'js/store.js', 'js/assist-core.js', 'js/assist-net.js',
 ]
-UI_SCRIPTS = ['js/editor.js', 'js/ui.js', 'js/app.js']
+UI_SCRIPTS = ['js/editor.js', 'js/ui.js', 'js/assist.js', 'js/app.js']
 
 
 def scripts(names):

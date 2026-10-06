@@ -58,6 +58,23 @@ function cloneNode(n) {
   return c;
 }
 
+/* re-measure a widget whose size follows its content (text, values, rings, tables), keeping its anchor */
+function remeasure(w, env) {
+  const def = WT[w.type]; if (!def?.measure || def.resize === 'free') return;
+  const m = def.measure(w.p, env, w);
+  if (def.resize === 'x') { w.h = m.h; if (w.type === 'meter') w.w = m.w; return; }
+  const a = def.anchor ? def.anchor(w.p) : 'l';
+  if (a === 'r') w.x += w.w - m.w; else if (a === 'c') { w.x += (w.w - m.w) / 2; w.y += (w.h - m.h) / 2; }
+  w.w = m.w; w.h = m.h;
+}
+/* point every sensor field of a widget (rows included) that reads `from` at `to` */
+function swapSensor(w, from, to) {
+  let n = 0;
+  const fix = o => { for (const k of Object.keys(o)) { if (o[k] === from && /sensor/i.test(k)) { o[k] = to; n++; } else if (Array.isArray(o[k])) o[k].forEach(r => r && typeof r === 'object' && fix(r)); } };
+  fix(w.p); if (n && w.p.slabel) delete w.p.slabel;
+  return n;
+}
+
 /* ---- sanitize untrusted documents (design files, share links) ---- */
 const sStr = (v, max = 200) => typeof v === 'string' ? v.replace(/[\u0000-\u001f]/g, '').slice(0, max) : '';
 const sNum = (v, lo, hi, d) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };

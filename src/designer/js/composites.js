@@ -215,3 +215,13 @@ defineWidget({
 
 /* expanded children of a composite, measured, in local coordinates */
 function expandComposite(w, env) { return WT[w.type].expand(w.p, { x: 0, y: 0, w: w.w, h: w.h }, env); }
+
+/* starting props for the tables on a given PC (the palette and the assistant) */
+function tableDefaults(type, hw) {
+  hw = hw || HW_DEFAULTS; const g = hw.gpu || 1;
+  if (type === 'coreTable') return { pCores: hw.pCores, eCores: hw.eCores, smt: hw.smt !== false };
+  if (type === 'powerTable') return { rows: [{ label: 'CPU PACKAGE', sensor: 'PCPUPKG', max: 200, unit: ' W', color: '@cpu', sensor2: '', unit2: ' V' }, { label: 'GPU', sensor: `PGPU${g}`, max: 450, unit: ' W', color: '@gpu', sensor2: '', unit2: ' V' }] };
+  if (type === 'storageTable') return { rows: (hw.disks?.length ? hw.disks : HW_DEFAULTS.disks).map(d => ({ name: d.name, num: d.num || 0, letter: d.letter || '' })) };
+  if (type === 'fanRow') return { board: false, sub: 'RPM', cells: (hw.fans?.length ? hw.fans : HW_DEFAULTS.fans).map(f => ({ label: f.label, sensor: f.id, min: 0, max: f.max, unit: '', warn: 0 })) };
+  return {};
+}

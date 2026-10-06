@@ -8,6 +8,7 @@ OLED-friendly AIDA64 SensorPanel layouts and a drag-and-drop Panel Designer. Bui
 - OLED first: pure black (`#000`) background, dim static markings, colour only on live values. Prefer line graphs (`LG`) over area graphs (`AG`) so large areas don't stay lit.
 - After changing anything that feeds an export, rebuild and re-check the exported file (see Verify), not just the preview.
 - Pages are self-contained single files. No CDNs or external JS; fonts and shared scripts are inlined at build time.
+- The designer connects only when the user asks: to openrouter.ai or to Ollama on 127.0.0.1/localhost. Its CSP meta (`connect-src`) allows exactly those; nothing else may fetch.
 - InfoPanel and SynQPanel (GPL-3.0) import `.sensorpanel` files. Use them for format knowledge only; copy no code.
 
 ## Layout
@@ -142,7 +143,7 @@ build_site.py              runs the builds and writes the site folders
 
 **Scripts**
 - Each JS file is inlined as its own classic `<script>` with a `//# sourceURL`.
-- `build.py` keeps two lists: `CORE_SCRIPTS` (logic, also loaded by the test harness) and `UI_SCRIPTS` (editor, ui, app).
+- `build.py` keeps two lists: `CORE_SCRIPTS` (logic, also loaded by the test harness) and `UI_SCRIPTS` (editor, ui, assist, app).
 - Designer files share one global scope, so keep top-level names unique.
 
 **Document** (`doc.js`)
@@ -156,6 +157,7 @@ build_site.py              runs the builds and writes the site folders
   - whatever `def.sanitize()` adds.
 - A new prop that is neither a field nor in `defaults()` is dropped on reload unless `def.sanitize` keeps it.
 - `setDoc()` canonicalizes every incoming doc through `sanitizeDoc`.
+- Shared helpers: `remeasure(w, env)` (size follows content, keeping the anchor) and `swapSensor(w, from, to)` (every sensor field, rows included).
 
 **Widgets** (`widgets.js`, `gauges.js`, `composites.js`)
 - Each type is registered with `defineWidget({type, label, cat, kind, resize, defaults, fields, sensors, measure, anchor, scale, emit | expand})`.
@@ -164,7 +166,7 @@ build_site.py              runs the builds and writes the site folders
   - `bar` (cumulative stacks: the chunk must divide 15), `ring` (the builder's ring), `dial` and `meter` (exclusive needle stacks, ported from gen.py);
   - `customGauge`, `nativeGauge`, `sensorItem`, `rawItem` (opened panels).
 - Composites (`coreTable`, `powerTable`, `storageTable`, `fanRow`, `readout`) expand to primitives; `_div` children only add divider labels. Detach replaces a composite with its parts.
-- `WF.*` (in composites.js) places text and values by baseline/anchor exactly like the builder's helpers.
+- `WF.*` (in composites.js) places text and values by baseline/anchor exactly like the builder's helpers. `tableDefaults(type, hw)` gives the tables' starting props for a PC (palette and assistant).
 - Snippets (`snippets.js`, `SNIP.*`, `PRESETS`) are ready-made groups used by the palette and the themes.
 
 **Painter and compile** (`paint.js`, `compile.js`)
@@ -179,10 +181,27 @@ build_site.py              runs the builds and writes the site folders
 - Parity is checked against the builder export and the committed Classic file (see Verify).
 
 **Editor** (`editor.js`, `ui.js`, `app.js`)
-- `APP` holds the state. Undo uses JSON snapshots; `edit(fn, key)` merges edits with the same key within 500 ms.
+- `APP` holds the state. Undo uses JSON snapshots; `edit(fn, key)` merges edits with the same key within 500 ms, and `edit(fn, key, {sticky: true})` however far apart (one assistant request). Any other edit, a drag or Undo/Redo ends the merge.
 - Per-widget op caches are keyed by type, w, h, p and tokens, never x/y, so moving never re-renders.
 - Pointer events everywhere, so touch works.
-- `window.__designer` exposes test hooks.
+- `window.__designer` exposes test hooks; `UI.after` holds extra refresh callbacks (the assistant's selection chip).
+
+**Assistant** (`assist-core.js`, `assist-net.js` in CORE_SCRIPTS; `assist.js` in UI_SCRIPTS)
+- Routes: copy & paste (prompt to any chat, reply pasted back), OpenRouter (browser → openrouter.ai), Ollama (`http://127.0.0.1:11434`). The Claude viewer gets copy & paste only; sign-in needs https or localhost.
+- Four tools for API models: `get_design`, `get_node`, `find_sensors`, `apply_ops`. The paste route uses the same ops in a ```json block.
+- `AI.exec(doc, ops, ctx)` is the only way the assistant changes a design:
+  - ops: add (type or preset), update, remove, duplicate, group, ungroup, order, replace_sensor, style, panel; `$ref` names last for one request (`ctx.refs`);
+  - creates only the palette types and `PRESETS`, writes only declared fields (checked like `sanitizeField`, never `tags`, `frames`, `asset`, `slabel`), and leaves touched nodes canonical;
+  - each op validates on copies and changes nothing when it fails; errors name what is allowed; warnings cover sensors not on the PC, OLED (area graphs, big fills), imperial units, outside the panel, overlaps.
+  - a sensor given without a range gets the catalogue's (graphs, bars, rings, dials, readouts, meter scales).
+- `assist.js` `aiApply()`: dry run on a copy; asks before removing more than 10 parts or 30 %; then swaps the copy in with one sticky `edit()`. Changed parts are selected; a Keep/Undo bar follows.
+- Prompts: `AI.rules()` (house rules, ops, catalogue generated from `WT`, common sensor IDs) and `AI.summary()` (`<design_state>`; design text JSON-quoted with `<`/`>` escaped). Ollama gets the group-level summary and `aiFit()` trims history to `num_ctx`.
+- Network (`assist-net.js`): `NET.fetch`/`NET.go` (tests set `window.__assistFetch`, `__assistNavigate`, `__assistWaitMs`); SSE and NDJSON readers; `OR.chat` assembles streamed tool calls and passes `reasoning_details` back unchanged; `OR.error` maps 401 (forget the key), 402, 429 (wait 15 s, 45 s), 408/502/503 (retry once).
+- Only the parameters a model lists in `supported_parameters` are sent, plus `provider.require_parameters`.
+- Keys (`KEYS`): sessionStorage by default, localStorage only with "remember". Never in IndexedDB, designs, links, files, chat or logs; error text is redacted.
+- Sign-in (`PKCE`): S256 verifier/state in sessionStorage; `assistBoot()` runs before the `#d=` link handling, cleans `?code&state` from the address, and exchanges the code only if the state matches and it is under 10 minutes old.
+- Ollama diagnosis when Connect fails: a no-cors probe tells "running but `OLLAMA_ORIGINS` doesn't allow this origin" from "not running"; a denied local-network permission means the browser blocked it.
+- Storage: settings in STORE `assist`; the conversation in sessionStorage (`…assist-chat`), plain text only.
 
 **Storage**
 - IndexedDB `aida64-sensorpanels-designer`, with a memory fallback: autosave `doc:current`, recent designs, assets, and the PC list (`pc`).
@@ -194,12 +213,14 @@ build_site.py              runs the builds and writes the site folders
 - **Builder exports byte-identical after shared-code changes:**
   - before the change: `uv run --with playwright python src/builder/check_export.py --all --hash-out before.json`;
   - after the change: `… --all --compare before.json`.
-- **Designer:** `uv run --with playwright --with pillow python src/designer/check_designer.py [io pc catalog widgets themes editor pages]`. It covers:
+- **Designer:** `uv run --with playwright --with pillow python src/designer/check_designer.py [io pc catalog widgets themes editor assist pages]`. It covers:
   - format round trips: the builder export and the Classic file re-written byte-identical; the AIDA64 sample;
   - sensor lists; needle and segment sweeps; the flatten rule;
   - Modern Split parity with the builder (items, frames, positions ±1 px, background) and Classic parity with gen.py;
   - editor interactions, undo/redo, files, links, autosave;
+  - the assistant with a fake network: executor (errors, warnings, refs, 1500 random ops stay canonical, ops equal the editor's commands), reply extraction, stream readers split at every byte, scripted OpenRouter and Ollama turns, failures (401/402/429, mid-stream error, Stop, round cap, delete confirm), the sign-in round trip on a local http server, and that the key never leaks;
   - 390 px on every page.
+- The assistant needs real checks by hand: a real OpenRouter sign-in on GitHub Pages, an Ollama model with `OLLAMA_ORIGINS` set, and a copy-and-paste round trip.
 - For gauge changes, check exactly one needle/state is visible at each value and that segment counts match values.
 - Check the pages at phone width (390 px) for horizontal scrolling.
 
